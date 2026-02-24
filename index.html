@@ -6,7 +6,7 @@
         content="Deformable Neural Radiance Fields creates free-viewpoint portraits (nerfies) from casually captured videos.">
   <meta name="keywords" content="Nerfies, D-NeRF, NeRF">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nerfies: Deformable Neural Radiance Fields</title>
+  <title>HDR-NSFF: High Dynamic Range Neural Scene Flow Fields</title>
 
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
@@ -42,7 +42,7 @@
 </head>
 <body>
 
-<nav class="navbar" role="navigation" aria-label="main navigation">
+<!-- <nav class="navbar" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
     <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
       <span aria-hidden="true"></span>
@@ -80,7 +80,7 @@
     </div>
 
   </div>
-</nav>
+</nav> -->
 
 
 <section class="hero">
@@ -88,32 +88,27 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h1 class="title is-1 publication-title">Nerfies: Deformable Neural Radiance Fields</h1>
+          <div class="is-size-4 publication-conf">
+          </div>
+          <h1 class="title is-1 publication-title">HDR-NSFF: High Dynamic Range Neural Scene Flow Fields</h1>
+          <div class="is-size-4" style="font-weight: 800; color: #33852d; margin-bottom: 1rem;">
+            ICLR 2026
+          </div>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://keunhong.com">Keunhong Park</a><sup>1</sup>,</span>
+              <a href="https://shin-dong-yeon.github.io">Shin Dong-Yeon</a><sup>1</sup>,</span>
             <span class="author-block">
-              <a href="https://utkarshsinha.com">Utkarsh Sinha</a><sup>2</sup>,</span>
+              <a href="https://kim-junseong.github.io/">Kim Jun-Seong</a><sup>1</sup>,</span>
             <span class="author-block">
-              <a href="https://jonbarron.info">Jonathan T. Barron</a><sup>2</sup>,
+              <a href="https://sites.google.com/view/kwon-byung--ki/">Kwon Byung-Ki</a><sup>1</sup>,
             </span>
             <span class="author-block">
-              <a href="http://sofienbouaziz.com">Sofien Bouaziz</a><sup>2</sup>,
-            </span>
-            <span class="author-block">
-              <a href="https://www.danbgoldman.com">Dan B Goldman</a><sup>2</sup>,
-            </span>
-            <span class="author-block">
-              <a href="https://homes.cs.washington.edu/~seitz/">Steven M. Seitz</a><sup>1,2</sup>,
-            </span>
-            <span class="author-block">
-              <a href="http://www.ricardomartinbrualla.com">Ricardo Martin-Brualla</a><sup>2</sup>
-            </span>
+              <a href="https://ami.kaist.ac.kr/members/tae-hyun-oh">Tae-Hyun Oh</a><sup>2</sup>
           </div>
 
           <div class="is-size-5 publication-authors">
-            <span class="author-block"><sup>1</sup>University of Washington,</span>
-            <span class="author-block"><sup>2</sup>Google Research</span>
+            <span class="author-block"><sup>1</sup>POSTECH,</span>
+            <span class="author-block"><sup>2</sup>KAIST</span>
           </div>
 
           <div class="column has-text-centered">
@@ -258,31 +253,22 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            We present the first method capable of photorealistically reconstructing a non-rigidly
-            deforming scene using photos/videos captured casually from mobile phones.
-          </p>
-          <p>
-            Our approach augments neural radiance fields
-            (NeRF) by optimizing an
-            additional continuous volumetric deformation field that warps each observed point into a
-            canonical 5D NeRF.
-            We observe that these NeRF-like deformation fields are prone to local minima, and
-            propose a coarse-to-fine optimization method for coordinate-based models that allows for
-            more robust optimization.
-            By adapting principles from geometry processing and physical simulation to NeRF-like
-            models, we propose an elastic regularization of the deformation field that further
-            improves robustness.
-          </p>
-          <p>
-            We show that <span class="dnerf">Nerfies</span> can turn casually captured selfie
-            photos/videos into deformable NeRF
-            models that allow for photorealistic renderings of the subject from arbitrary
-            viewpoints, which we dub <i>"nerfies"</i>. We evaluate our method by collecting data
-            using a
-            rig with two mobile phones that take time-synchronized photos, yielding train/validation
-            images of the same pose at different viewpoints. We show that our method faithfully
-            reconstructs non-rigidly deforming scenes and reproduces unseen views with high
-            fidelity.
+            Radiance of real-world scenes typically spans a much wider dynamic range than
+            what standard cameras can capture, often leading to saturated highlights or under-
+            exposed shadows. While conventional HDR methods merge alternatively exposed
+            frames, most approaches remain constrained to the 2D image plane, failing to
+            model geometry and motion consistently. To address these limitations, we present
+            HDR-NSFF, a novel framework for reconstructing dynamic HDR radiance fields
+            from alternatively exposed monocular videos. Our method explicitly models 3D
+            scene flow, HDR radiance, and tone mapping in a unified end-to-end pipeline.
+            We further enhance robustness by (i) extending semantic-based optical flow with
+            DINO features to achieve exposure-invariant motion estimation, and (ii) incor-
+            porating a generative prior as a regularizer to compensate for sparse-view and
+            saturation-induced information loss. To enable systematic evaluation, we construct
+            a real-world GoPro dataset with synchronized multi-exposure captures. Experi-
+            ments demonstrate that HDR-NSFF achieves state-of-the-art performance in novel
+            view and time synthesis, recovering fine radiance details and coherent dynamics
+            even under challenging exposure variations and large motions.
           </p>
         </div>
       </div>
@@ -444,11 +430,11 @@
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@article{park2021nerfies,
-  author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
-  title     = {Nerfies: Deformable Neural Radiance Fields},
-  journal   = {ICCV},
-  year      = {2021},
+    <pre><code>@inproceedings{dong-yeon2026hdr-nsff,
+      title = {HDR-NSFF: High Dynamic Range Neural Scene Flow Fields},
+      author = {Dong-Yeon, Shin and Jun-Seong, Kim and Byung-Ki, Kwon and Oh, Tae-Hyun},
+      booktitle = {ICLR},
+      year = {2026}
 }</code></pre>
   </div>
 </section>
