@@ -32,7 +32,7 @@
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="./static/css/index.css">
-  <link rel="icon" href="./static/images/favicon.svg">
+  <link rel="icon" href="./static/images/camera.png">
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
@@ -115,7 +115,7 @@
             <div class="publication-links">
               <!-- PDF Link. -->
               <span class="link-block">
-                <a href="https://shin-dong-yeon.github.io/HDR-NSFF"
+                <a href="https://openreview.net/pdf?id=MoRmmDiKAo"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fas fa-file-pdf"></i>
@@ -123,7 +123,7 @@
                   <span>Paper</span>
                 </a>
               </span>
-              <span class="link-block">
+              <!-- <span class="link-block">
                 <a href="https://shin-dong-yeon.github.io/HDR-NSFF"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
@@ -131,7 +131,7 @@
                   </span>
                   <span>arXiv</span>
                 </a>
-              </span>
+              </span> -->
               <!-- Video Link. -->
               <span class="link-block">
                 <a href="https://shin-dong-yeon.github.io/HDR-NSFF"
@@ -139,7 +139,7 @@
                   <span class="icon">
                       <i class="fab fa-youtube"></i>
                   </span>
-                  <span>Video</span>
+                  <span>Video (TBU)</span>
                 </a>
               </span>
               <!-- Code Link. -->
@@ -149,7 +149,7 @@
                   <span class="icon">
                       <i class="fab fa-github"></i>
                   </span>
-                  <span>Code (Soon)</span>
+                  <span>Code (TBU)</span>
                   </a>
               </span>
               <!-- Dataset Link. -->
@@ -159,7 +159,7 @@
                   <span class="icon">
                       <i class="far fa-images"></i>
                   </span>
-                  <span>Data (Soon)</span>
+                  <span>Data (TBU)</span>
                   </a>
             </div>
 
@@ -185,6 +185,19 @@
     </div>
   </div>
 </section> -->
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <video id="teaser" autoplay muted loop playsinline controls height="100%">
+        <source src="./static/videos/teaser.mp4" type="video/mp4">
+      </video>
+      <h2 class="subtitle has-text-centered">
+        <span class="dnerf">HDR-NSFF</span> reconstruct HDR dynamic radiance field via alternatively exposed monocular videos.
+      </h2>
+    </div>
+  </div>
+</section>
 
 
 <!-- <section class="hero is-light is-small">
@@ -399,19 +412,20 @@
     <!-- Concurrent Work. -->
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">Concurrent works</h2>
-
+        <h2 class="title is-3">Concurrent Works</h2>
+    
         <div class="content has-text-justified">
           <p>
-            There's are several concurent works that also aim to reconstruct HDR-4D:
+            There are several concurrent works that also aim to reconstruct HDR-4D:
           </p>
           <ul>
-            <a href="https://arxiv.org/abs/2510.18489"> Mono4DGS-HDR: High Dynamic Range 4D Gaussian Splatting from Alternating-exposure Monocular Videos</a>
+            <li>
+              <a href="https://arxiv.org/abs/2510.18489">Mono4DGS-HDR: High Dynamic Range 4D Gaussian Splatting from Alternating-exposure Monocular Videos</a>
+            </li>
+            <li>
+              <a href="https://arxiv.org/html/2509.21853v3">Dynamic Novel View Synthesis in High Dynamic Range</a>
+            </li>
           </ul>
-          <ul>
-            <a href="https://arxiv.org/html/2509.21853v3"> Dynamic Novel View Synthesis in High Dynamic Range</a>
-          </ul>
-          </p>
         </div>
       </div>
     </div>
@@ -441,7 +455,7 @@
          href="./static/videos/nerfies_paper.pdf">
         <i class="fas fa-file-pdf"></i>
       </a>
-      <a class="icon-link" href="https://github.com/keunhong" class="external-link" disabled>
+      <a class="icon-link" href="https://github.com/shin-dong-yeon" class="external-link" disabled>
         <i class="fab fa-github"></i>
       </a>
     </div>
