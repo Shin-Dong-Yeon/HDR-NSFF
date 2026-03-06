@@ -266,22 +266,15 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Radiance of real-world scenes typically spans a much wider dynamic range than
-            what standard cameras can capture, often leading to saturated highlights or under-
-            exposed shadows. While conventional HDR methods merge alternatively exposed
-            frames, most approaches remain constrained to the 2D image plane, failing to
-            model geometry and motion consistently. To address these limitations, we present
-            HDR-NSFF, a novel framework for reconstructing dynamic HDR radiance fields
-            from alternatively exposed monocular videos. Our method explicitly models 3D
-            scene flow, HDR radiance, and tone mapping in a unified end-to-end pipeline.
-            We further enhance robustness by (i) extending semantic-based optical flow with
-            DINO features to achieve exposure-invariant motion estimation, and (ii) incor-
-            porating a generative prior as a regularizer to compensate for sparse-view and
-            saturation-induced information loss. To enable systematic evaluation, we construct
-            a real-world GoPro dataset with synchronized multi-exposure captures. Experi-
-            ments demonstrate that HDR-NSFF achieves state-of-the-art performance in novel
-            view and time synthesis, recovering fine radiance details and coherent dynamics
-            even under challenging exposure variations and large motions.
+            Radiance of real-world scenes typically spans a much wider dynamic range than what standard cameras can capture.
+            While conventional HDR methods merge alternating-exposure frames, these approaches are inherently constrained to 2D pixel-level alignment, often leading to ghosting artifacts and temporal inconsistency in dynamic scenes.
+            To address these limitations, we present HDR-NSFF, a paradigm shift from 2D-based merging to 4D spatio-temporal modeling.
+            Our framework reconstructs dynamic HDR radiance fields from alternating-exposure monocular videos by representing the scene as a continuous function of space and time, and is compatible with both neural radiance field and 4D Gaussian Splatting (4DGS) based dynamic representations.
+            This unified end-to-end pipeline explicitly models HDR radiance, 3D scene flow, geometry, and tone-mapping, ensuring physical plausibility and global coherence.
+            We further enhance robustness by (i) extending semantic-based optical flow with DINO features to achieve exposure-invariant motion estimation, and (ii) incorporating a generative prior as a regularizer to compensate for 
+            limited observation in monocular captures and saturation-induced information loss.
+            To evaluate HDR space-time view synthesis, we present the first real-world HDR-GoPro dataset specifically designed for dynamic HDR scenes.
+            Experiments demonstrate that HDR-NSFF recovers fine radiance details and coherent dynamics even under challenging exposure variations, thereby achieving state-of-the-art performance in novel space-time view synthesis. 
           </p>
         </div>
       </div>
