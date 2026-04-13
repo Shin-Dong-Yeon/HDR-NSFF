@@ -2,7 +2,6 @@ import configargparse
 
 def config_parser():
 
-    import configargparse
     parser = configargparse.ArgumentParser()
     parser.add_argument('--config', is_config_file=True, 
                         help='config file path')
@@ -60,9 +59,7 @@ def config_parser():
     parser.add_argument("--sat_mask_0", action='store_true', default=False, help='optionsl Ture / False')
     parser.add_argument("--sat_mask_3", action='store_true', default=False, help='optionsl Ture / False')
     parser.add_argument("--viz_crf", action='store_true', default=False, help='optionsl Ture / False')
-    parser.add_argument("--fine_tune", action='store_true', default=False)
     parser.add_argument("--render_dy", action='store_true', default=False)
-    parser.add_argument("--mix_flow", action='store_true', default=False)
     parser.add_argument("--crf_monotonic", action='store_true', default=False)
     parser.add_argument("--crf_start_step", type=int, default=0)
     parser.add_argument("--patch_size", type=int, default=32)
@@ -89,7 +86,6 @@ def config_parser():
     parser.add_argument("--difix_kview_step", type=int, default=1)
     parser.add_argument("--difix_save_root", type=str, default="difix_views")
     parser.add_argument("--w_difix_render", type=float, default=1.)
-    parser.add_argument("--gpu_server", type=int, default=4)
     parser.add_argument("--difix_ver2", action='store_true', default=False)
     parser.add_argument("--difix_start_step", type=int, default=None)
     parser.add_argument("--difix_freeze_rigid", action='store_true', default=False)
@@ -105,7 +101,6 @@ def config_parser():
     parser.add_argument("--difix_gt_ref", action='store_true', default=False)
     parser.add_argument("--w_render", type=float, default=1.)
     parser.add_argument("--mask_warp", action='store_true', default=False)
-    parser.add_argument("--difix_ver3", action='store_true', default=False)
     parser.add_argument("--difix_weights_map_ray", action='store_true', default=False)
     parser.add_argument("--render_l1_l2", action='store_true', help='use MSE + alpha*MAE mixed loss')
     parser.add_argument("--w_l1_l2", type=float, default=0.01, help='alpha coefficient for MAE term')
@@ -144,8 +139,6 @@ def config_parser():
                         help='specific weights npy file to reload for coarse network')
     parser.add_argument("--N_iters", type=int, default=250001,
                         help='how many iteration do you want to run')
-    parser.add_argument("--multi_camera", action='store_true', default=False, help='when use multi-camera setting')
-
 
     # rendering options
     parser.add_argument("--N_samples", type=int, default=64, 
@@ -246,8 +239,6 @@ def config_parser():
                         help='use tone mapping module')
     parser.add_argument('--use_sat_mask', action='store_true', default=False)
     parser.add_argument('--tone_mapping', type=str, choices=["piece_wise", "nn", "hdr_hexplane"], default = "piece_wise")
-    # parser.add_argument('--render_mode', type=int, default=0,
-    #                     help='0:combined, 1:rigit, 2: dynamic')
     parser.add_argument('--render_mode', type=str, default='full',
                         help='full / cb / dynamic /rigid')
     return parser
