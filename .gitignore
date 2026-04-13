@@ -1,0 +1,43 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Model checkpoints (large files stored in /node_data)
+*.pth
+*.pt
+*.bin
+*.ckpt
+*.safetensors
+
+# Exception: small LPIPS perceptual weights committed to repo
+!nsff_exp/models/weights/**/*.pth
+
+# CUDA extension build artifacts
+nsff_scripts/alt_cuda_corr/build/
+nsff_scripts/alt_cuda_corr/dist/
+nsff_scripts/alt_cuda_corr/*.egg-info/
+nsff_scripts/alt_cuda_corr/*.so
+
+# Experiment tracking
+wandb/
+runs/
+*.tfevents.*
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Experiment configs (all except representative public configs in config_pub/)
+nsff_exp/configs/
+
+# Logs
+*.log
+
+# Environment
+.env
