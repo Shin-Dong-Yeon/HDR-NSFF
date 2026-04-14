@@ -89,7 +89,6 @@ def evaluation():
             share_wb=args.share_wb,
             ref_idx=args.ref_idx,
             log_scale=args.log_scale,
-            unit_loss=args.unit_loss,
         )
         optim_cam_wb, optim_cam_crf = Cam_param.optimizer(l_rate=args.lrate)
 

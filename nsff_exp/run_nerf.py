@@ -121,7 +121,6 @@ def train():
             share_wb=args.share_wb,
             ref_idx=args.ref_idx,
             log_scale=args.log_scale,
-            unit_loss=args.unit_loss,
         )
         optim_cam_wb, optim_cam_crf = Cam_param.optimizer(l_rate=args.lrate)
         camparam_frozen = False
@@ -646,9 +645,7 @@ def train():
 
         # ── Scene Flow Chain Scheduling ────────────────────────────────────────
         # After 2× decay_iteration epochs, enable 5-frame chain scene-flow loss
-        if args.no_chain_5frames:
-            chain_5frames = False
-        elif args.chain_sf and i > decay_iteration * 1000 * 2:
+        if args.chain_sf and i > decay_iteration * 1000 * 2:
             chain_5frames = True
         else:
             chain_5frames = False
@@ -717,23 +714,12 @@ def train():
 
         # Saturation mask: de-emphasize clipped (over/under-exposed) pixels
         if args.use_sat_mask:
-            if args.sat_mask_0:
-                sat_mask = saturation_mask_0(target_rgb,
-                                             threshold_low=args.leaky_th_l,
-                                             threshold_high=args.leaky_th_h)
-            elif args.sat_mask_3:
-                sat_mask = saturation_mask_3(target_rgb,
-                                             threshold_low=args.leaky_th_l,
-                                             threshold_high=args.leaky_th_h)
-            else:
-                sat_mask = saturation_mask(target_rgb,
-                                           threshold_low=args.leaky_th_l,
-                                           threshold_high=args.leaky_th_h)
+            sat_mask = saturation_mask(target_rgb,
+                                       threshold_low=args.leaky_th_l,
+                                       threshold_high=args.leaky_th_h)
 
-        prob_reg_loss = (
-            args.w_prob_reg * (torch.mean(torch.abs(ret['raw_prob_ref2prev']))
-                               + torch.mean(torch.abs(ret['raw_prob_ref2post'])))
-            if not args.skip_prob_reg_loss else torch.zeros(1).to(device))
+        prob_reg_loss = args.w_prob_reg * (torch.mean(torch.abs(ret['raw_prob_ref2prev']))
+                                           + torch.mean(torch.abs(ret['raw_prob_ref2post'])))
 
         # Helper: dispatch to the appropriate photometric loss variant
         def _render_loss(pred, tgt, weight=None):
@@ -803,46 +789,33 @@ def train():
             render_loss += _render_loss(rgb_map_pp_dy, target_rgb, w_5f)
 
         # ── Scene Flow Losses ──────────────────────────────────────────────────
-        if args.unit_sf_bidirection:
-            sf_cycle_loss = args.w_cycle * (
-                compute_mae_unit(ret['raw_sf_ref2post'], -ret['raw_sf_post2ref'],
-                                 weight_post.unsqueeze(-1), dim=3)
-                + compute_mae_unit(ret['raw_sf_ref2prev'], -ret['raw_sf_prev2ref'],
-                                   weight_prev.unsqueeze(-1), dim=3))
-        else:
-            sf_cycle_loss = args.w_cycle * (
-                compute_mae(ret['raw_sf_ref2post'], -ret['raw_sf_post2ref'],
-                            weight_post.unsqueeze(-1), dim=3)
-                + compute_mae(ret['raw_sf_ref2prev'], -ret['raw_sf_prev2ref'],
-                              weight_prev.unsqueeze(-1), dim=3))
+        sf_cycle_loss = args.w_cycle * (
+            compute_mae(ret['raw_sf_ref2post'], -ret['raw_sf_post2ref'],
+                        weight_post.unsqueeze(-1), dim=3)
+            + compute_mae(ret['raw_sf_ref2prev'], -ret['raw_sf_prev2ref'],
+                          weight_prev.unsqueeze(-1), dim=3))
 
         # Scene flow magnitude regularization (encourage small flow)
-        if not args.skip_sf_reg_loss:
-            render_sf_ref2prev = torch.sum(
-                ret['weights_ref_dy'].unsqueeze(-1) * ret['raw_sf_ref2prev'], -1)
-            render_sf_ref2post = torch.sum(
-                ret['weights_ref_dy'].unsqueeze(-1) * ret['raw_sf_ref2post'], -1)
-            sf_reg_loss = args.w_sf_reg * (torch.mean(torch.abs(render_sf_ref2prev))
-                                           + torch.mean(torch.abs(render_sf_ref2post)))
-        else:
-            sf_reg_loss = torch.zeros(1).to(device)
+        render_sf_ref2prev = torch.sum(
+            ret['weights_ref_dy'].unsqueeze(-1) * ret['raw_sf_ref2prev'], -1)
+        render_sf_ref2post = torch.sum(
+            ret['weights_ref_dy'].unsqueeze(-1) * ret['raw_sf_ref2post'], -1)
+        sf_reg_loss = args.w_sf_reg * (torch.mean(torch.abs(render_sf_ref2prev))
+                                       + torch.mean(torch.abs(render_sf_ref2post)))
 
         # Scene flow smoothness + least kinetic energy losses
-        if not args.skip_sf_sm_loss:
-            sf_sm_loss = args.w_sm * (
-                compute_sf_sm_loss(ret['raw_pts_ref'], ret['raw_pts_post'], H, W, focal)
-                + compute_sf_sm_loss(ret['raw_pts_ref'], ret['raw_pts_prev'], H, W, focal)
-                + 2 * compute_sf_lke_loss(ret['raw_pts_ref'], ret['raw_pts_post'],
-                                          ret['raw_pts_prev'], H, W, focal))
-            # Two-frame chain kinetic energy (alternates fwd/bwd each iteration)
-            if chain_bwd:
-                sf_sm_loss += args.w_sm * compute_sf_lke_loss(
-                    ret['raw_pts_prev'], ret['raw_pts_ref'], ret['raw_pts_pp'], H, W, focal)
-            else:
-                sf_sm_loss += args.w_sm * compute_sf_lke_loss(
-                    ret['raw_pts_post'], ret['raw_pts_pp'], ret['raw_pts_ref'], H, W, focal)
+        sf_sm_loss = args.w_sm * (
+            compute_sf_sm_loss(ret['raw_pts_ref'], ret['raw_pts_post'], H, W, focal)
+            + compute_sf_sm_loss(ret['raw_pts_ref'], ret['raw_pts_prev'], H, W, focal)
+            + 2 * compute_sf_lke_loss(ret['raw_pts_ref'], ret['raw_pts_post'],
+                                      ret['raw_pts_prev'], H, W, focal))
+        # Two-frame chain kinetic energy (alternates fwd/bwd each iteration)
+        if chain_bwd:
+            sf_sm_loss += args.w_sm * compute_sf_lke_loss(
+                ret['raw_pts_prev'], ret['raw_pts_ref'], ret['raw_pts_pp'], H, W, focal)
         else:
-            sf_sm_loss = torch.zeros(1).to(device)
+            sf_sm_loss += args.w_sm * compute_sf_lke_loss(
+                ret['raw_pts_post'], ret['raw_pts_pp'], ret['raw_pts_ref'], H, W, focal)
 
         entropy_loss = args.w_entropy * torch.mean(
             -ret['raw_blend_w'] * torch.log(ret['raw_blend_w'] + 1e-8))
@@ -911,10 +884,6 @@ def train():
                 loss = loss + crf_smooth_loss
             else:
                 crf_smooth_loss = None
-            if args.unit_loss:
-                unit_loss = Cam_param.point_constraint()
-                if unit_loss is not None:
-                    loss = loss + unit_loss * args.w_unit
             if args.crf_monotonic:
                 crf_monotonic_loss = w_crf_monotonic * Cam_param.crf_monotonicity_loss()
                 loss = loss + crf_monotonic_loss

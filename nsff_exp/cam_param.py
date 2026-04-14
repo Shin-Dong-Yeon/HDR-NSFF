@@ -147,16 +147,13 @@ class only_gamma(nn.Module):
         return rgb
 
 class CamParam:
-    def __init__(self, N, H, W, device, gts, initialize=True, tone_mapping="piece_wise", share_crf=False, share_wb=False, ref_idx=0, log_scale=False, unit_loss=False):
+    def __init__(self, N, H, W, device, gts, initialize=True, tone_mapping="piece_wise", share_crf=False, share_wb=False, ref_idx=0, log_scale=False):
         self.device = device
         self.tone_mapping = tone_mapping
         self.share_crf = share_crf
         self.share_wb = share_wb
         self.N = N
         self.log_scale = log_scale
-        self.unit_loss = unit_loss
-        if self.unit_loss:
-            self.fix_value = np.mean(gts, axis=(0,1,2,3)).item()
         # learnable white-balance Tensor : N*3
         # initialize with 0 => used as exp(white_balance) > 0
         white_balance_init = torch.zeros((N,3), dtype=torch.float32)    # [N,3]
@@ -555,47 +552,6 @@ class CamParam:
             self.rgb_model.load_state_dict(ckpt['rgb_model'])
     
     
-    def point_constraint(self):
-        # Ground Truth 값이 int로 주어진 경우, 텐서 변환
-        gt = torch.tensor(self.fix_value).float().to(self.device)
-        
-        # 만약 gt가 스칼라(int)라면, 1D 텐서로 변환
-        if gt.dim() == 0:
-            gt = gt.unsqueeze(0)
-        
-        # Iv가 1D (즉, [r, g, b])이면 (1, 3)으로 확장
-        if gt.dim() == 1: 
-            gt = gt.unsqueeze(0)  # (1, 3) 형태로 변환
-
-        if self.tone_mapping == "piece_wise":
-            # CRF 기반 톤 매핑을 적용한 후 손실 계산
-            Iv = gt * 2 - 1  # [-1,1] 범위로 정규화
-            n, c = Iv.shape if Iv.dim() > 1 else (1, 1)  # 차원 맞추기
-
-            idx = torch.zeros(n).to(self.device)  # CRF 인덱스 (단일 CRF 사용 가정)
-            Ildr = torch.zeros(n, c).to(self.device)  # 변환된 LDR 결과
-
-            for i in range(c):
-                response_sl = self.CRF.alpha[:, :, i].unsqueeze(1)  # Shape: [N, 1, 255]
-                response_sl = response_sl.unsqueeze(0).permute(0, 2, 1, 3)  # (1, N, 1, 255)
-
-                # 샘플링 위치 생성
-                sl = torch.cat((Iv[:, i].unsqueeze(-1), torch.zeros(n, 1).to(self.device)), axis=1)
-                sl = sl.view(1, 1, n, 2)  # Shape: [1, 1, n, 2]
-
-                # grid_sample 적용
-                Ildr[:, i] = torch.nn.functional.grid_sample(response_sl, sl, padding_mode='border', align_corners=True)[0, 0, 0, :]
-
-            Ildr = (Ildr + 1) / 2  # [0,1] 범위로 변환
-            return img2mse(Ildr, gt, 1)  # MSE 손실 계산
-
-        elif self.tone_mapping == "nn":
-            rgb_pred = self.rgb_model(gt.repeat(1, 3))  # 입력을 배치 차원 추가하여 전달
-            return img2mse(rgb_pred, gt.unsqueeze(0), 1)  # MSE 손실 계산
-
-        elif self.tone_mapping == "hdr_hexplane":
-            return None
-        
     def visualize_crf(self, idx=0, save_path="CRF_plot.png"):
         """
         cam_param: CamParam 클래스 객체
