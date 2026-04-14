@@ -13,7 +13,7 @@ to_tensor = transforms.ToTensor()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-DEPTH_ANYTHING_ROOT = os.path.join(THIS_DIR, "depth_anything_v2")
+DEPTH_ANYTHING_ROOT = os.path.join(THIS_DIR, "Depth-Anything-V2", "metric_depth")
 if DEPTH_ANYTHING_ROOT not in sys.path:
     sys.path.insert(0, DEPTH_ANYTHING_ROOT)
 
@@ -326,7 +326,7 @@ class DifixUpdater:
             viz_root = f"{self.save_root}/step_{step:06d}"
             self.compute_synthetic_depths(
                 encoder='vitl',
-                ckpt_path='./depth_anything_v2/checkpoints/depth_anything_v2_metric_hypersim_vitl.pth',
+                ckpt_path='./Depth-Anything-V2/metric_depth/checkpoints/depth_anything_v2_metric_hypersim_vitl.pth',
                 input_size=518,
                 max_depth=40.0,
                 save_numpy=True,
@@ -355,7 +355,7 @@ class DifixUpdater:
     def compute_synthetic_depths(
         self,
         encoder: str = 'vitl',
-        ckpt_path: str = './depth_anything_v2/checkpoints/depth_anything_v2_metric_hypersim_vitl.pth',
+        ckpt_path: str = './Depth-Anything-V2/metric_depth/checkpoints/depth_anything_v2_metric_hypersim_vitl.pth',
         input_size: int = 518,
         max_depth: float = 40.0,
         save_numpy: bool = False,
