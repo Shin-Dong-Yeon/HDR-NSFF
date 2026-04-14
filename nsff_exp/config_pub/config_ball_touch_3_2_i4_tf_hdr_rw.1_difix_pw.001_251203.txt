@@ -65,7 +65,6 @@ use_difix=True
 difix_interval=20_000
 difix_kview=2
 difix_kview_step=1
-gpu_server=5
 difix_ver2=True
 difix_start_step=200_000
 difix_freeze_rigid=True
