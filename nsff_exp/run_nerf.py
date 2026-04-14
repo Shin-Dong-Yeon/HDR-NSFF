@@ -496,10 +496,6 @@ def train():
         chain_bwd = 1 - chain_bwd
         time0 = time.time()
 
-        # Frequency regularization: expose higher frequencies progressively
-        iter_val = i if args.use_freq_reg else None
-        render_kwargs_train['current_iter'] = iter_val
-        render_kwargs_test['current_iter']  = iter_val
 
         if i % (decay_iteration * 1000) == 0:
             torch.cuda.empty_cache()
@@ -1038,8 +1034,8 @@ def train():
                 ldr_img = torch.clamp(Cam_param.RAD2LDR_img(ret_v['rgb_map_ref'], img_i), 0., 1.)
                 mu50    = torch.log1p(ret_v['rgb_map_ref'] * 50) / torch.log1p(torch.tensor(50., device=device))
                 wandb.log({
-                    "rgb_map_ref_ldr": wandb.Image((ldr_img * 255).cpu().numpy().astype(np.uint8)),
-                    "rgb_map_ref":     wandb.Image((torch.clamp(mu50, 0., 1.) * 255).cpu().numpy().astype(np.uint8)),
+                    "rgb_map_ref_ldr": wandb.Image((ldr_img.detach() * 255).cpu().numpy().astype(np.uint8)),
+                    "rgb_map_ref":     wandb.Image((torch.clamp(mu50, 0., 1.).detach() * 255).cpu().numpy().astype(np.uint8)),
                     "wb":              wandb.Image(Cam_param.get_wb_plot()),
                 }, step=i)
                 if args.share_crf:

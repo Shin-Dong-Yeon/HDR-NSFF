@@ -9,7 +9,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import subprocess
 from run_nerf_helpers import *
-from posenc_utils import *
 from cam_param import *
 from glob import glob
 import matplotlib.cm as cm
@@ -1142,7 +1141,6 @@ def render_rays_sm(img_idx,
                 verbose=False,
                 pytest=False,
                 inference=True,
-                current_iter=None,
                 new_blending=False,
                 ):
     """Volumetric rendering.
@@ -1209,11 +1207,10 @@ def render_rays_sm(img_idx,
                                                                                rigid_network_query_fn, 
                                                                                network_rigid, 
                                                                                z_vals, rays_d, 
-                                                                               raw_noise_std,
-                                                                               current_iter)
+                                                                               raw_noise_std)
 
     # query point at time t
-    raw_ref = network_query_fn(pts_ref, viewdirs, network_fn, current_iter)
+    raw_ref = network_query_fn(pts_ref, viewdirs, network_fn)
     raw_rgba_ref = raw_ref[:, :, :4]
     raw_sf_ref2prev = raw_ref[:, :, 4:7]
     raw_sf_ref2post = raw_ref[:, :, 7:10]
@@ -1243,40 +1240,20 @@ def batchify(fn, chunk):
     return ret
 
 
-def run_network(inputs, viewdirs, fn, embed_fn, embeddirs_fn, netchunk=1024*16,
-                use_freq_reg=False, rigid=False, current_iter=None, reg_start_iter=0, reg_end_iter=None,
-                min_visible=1, max_visible=None):
+def run_network(inputs, viewdirs, fn, embed_fn, embeddirs_fn, netchunk=1024*16):
     """Prepares inputs and applies network 'fn'.
     """
-    # inputs = [N_rays, N_pts, 3], [N_rays, 128, 3]
-    inputs_flat = torch.reshape(inputs, [-1, inputs.shape[-1]]) # [N_rays * 128, 3] or [N_rays * 128, 4]
-    embedded = embed_fn(inputs_flat) # [N_rays * 128, 63] or [N_rays * 128, 84]
-    
-    coord_freq_mask = torch.ones(1).cuda().float()
-    # if current_iter is not None and reg_end_iter is not None:
-    if use_freq_reg:
-        if rigid:
-            dim=3
-        else:
-            dim=4
-        coord_freq_mask = get_freq_reg_mask(dim, embedded.shape[1], current_iter, reg_start_iter, reg_end_iter,
-                                            min_visible, max_visible)
-        embedded = embedded * coord_freq_mask
+    inputs_flat = torch.reshape(inputs, [-1, inputs.shape[-1]])
+    embedded = embed_fn(inputs_flat)
 
     if viewdirs is not None:
         input_dirs = viewdirs[:,None].expand(inputs[:, :, :3].shape)
         input_dirs_flat = torch.reshape(input_dirs, [-1, input_dirs.shape[-1]])
-        embedded_dirs = embeddirs_fn(input_dirs_flat) # [N_rays * 128, 27]
-
-        # if current_iter is not None and reg_end_iter is not None:
-        if use_freq_reg: 
-            view_freq_mask = get_freq_reg_mask(3, embedded_dirs.shape[1], current_iter, reg_start_iter, reg_end_iter,
-                                               min_visible=1, max_visible=max_visible) #FIXME
-            embedded_dirs = embedded_dirs * view_freq_mask
+        embedded_dirs = embeddirs_fn(input_dirs_flat)
         embedded = torch.cat([embedded, embedded_dirs], -1)
-    
+
     outputs_flat = batchify(fn, netchunk)(embedded)
-    outputs = torch.reshape(outputs_flat, 
+    outputs = torch.reshape(outputs_flat,
                             list(inputs.shape[:-1]) + [outputs_flat.shape[-1]])
     return outputs
 
@@ -1576,35 +1553,17 @@ def create_nerf(args):
     model_fine = None
     grad_vars += list(model_rigid.parameters())
 
-    # network_query_fn = lambda inputs, viewdirs, network_fn : run_network(inputs, viewdirs, network_fn,
-    #                                                                      embed_fn=embed_fn,
-    #                                                                      embeddirs_fn=embeddirs_fn,
-    #                                                                      netchunk=args.netchunk)
-    
-    network_query_fn = lambda inputs, viewdirs, network_fn, current_iter : \
+    network_query_fn = lambda inputs, viewdirs, network_fn : \
         run_network(inputs, viewdirs, network_fn,
                     embed_fn=embed_fn,
                     embeddirs_fn=embeddirs_fn,
-                    netchunk=args.netchunk,
-                    use_freq_reg=args.use_freq_reg,
-                    current_iter=current_iter,
-                    reg_start_iter=args.freq_reg_start_iter,
-                    reg_end_iter=args.freq_reg_end_iter,
-                    min_visible=args.freq_reg_min_visible,
-                    max_visible=args.freq_reg_max_visible)
+                    netchunk=args.netchunk)
 
-    rigid_network_query_fn = lambda inputs, viewdirs, network_fn, current_iter : run_network(inputs, viewdirs, network_fn,
-                                                                               embed_fn=embed_fn_rigid,
-                                                                               embeddirs_fn=embeddirs_fn,
-                                                                               netchunk=args.netchunk,
-                                                                               use_freq_reg=args.use_freq_reg_rigid,
-                                                                               rigid=args.use_freq_reg_rigid,
-                                                                               current_iter=current_iter,
-                                                                               reg_start_iter=args.freq_reg_start_iter,
-                                                                               reg_end_iter=args.freq_reg_end_iter,
-                                                                               min_visible=args.freq_reg_min_visible,
-                                                                               max_visible=args.freq_reg_max_visible
-                                                                               )
+    rigid_network_query_fn = lambda inputs, viewdirs, network_fn : \
+        run_network(inputs, viewdirs, network_fn,
+                    embed_fn=embed_fn_rigid,
+                    embeddirs_fn=embeddirs_fn,
+                    netchunk=args.netchunk)
 
     # Create optimizer
     optimizer = torch.optim.Adam(params=grad_vars, lr=args.lrate, betas=(0.9, 0.999))
@@ -1648,7 +1607,6 @@ def create_nerf(args):
         'white_bkgd' : args.white_bkgd,
         'raw_noise_std' : args.raw_noise_std,
         'inference': False,
-        'current_iter' : start,
         'new_blending' : args.new_blending,
     }
     # Stage 2
@@ -1935,12 +1893,10 @@ def get_rigid_outputs(pts, viewdirs,
                       network_query_fn, 
                       network_rigid, 
                       # netowrk_blend,
-                      z_vals, rays_d, 
-                      raw_noise_std,
-                      current_iter):
+                      z_vals, rays_d,
+                      raw_noise_std):
 
-    # with torch.no_grad():        
-    raw_rigid = network_query_fn(pts[..., :3], viewdirs, network_rigid, current_iter)
+    raw_rigid = network_query_fn(pts[..., :3], viewdirs, network_rigid)
     raw_rgba_rigid = raw_rigid[..., :4]
     raw_blend_w = raw_rigid[..., 4:]
 
@@ -1976,7 +1932,6 @@ def render_rays(img_idx,
                 verbose=False,
                 pytest=False,
                 inference=False,
-                current_iter=None,
                 chain_5frames_flow=False,
                 new_blending=False,
                 color_refiner=None,
@@ -2049,11 +2004,10 @@ def render_rays(img_idx,
                                                                                rigid_network_query_fn, 
                                                                                network_rigid, 
                                                                                z_vals, rays_d, 
-                                                                               raw_noise_std,
-                                                                               current_iter)
+                                                                               raw_noise_std)
 
 
-    raw_ref = network_query_fn(pts_ref, viewdirs, network_fn, current_iter)
+    raw_ref = network_query_fn(pts_ref, viewdirs, network_fn)
     raw_rgba_ref = raw_ref[:, :, :4]
     raw_sf_ref2prev = raw_ref[:, :, 4:7]
     raw_sf_ref2post = raw_ref[:, :, 7:10]
@@ -2112,7 +2066,7 @@ def render_rays(img_idx,
     pts_prev = torch.cat([(pts_ref[:, :, :3] + raw_sf_ref2prev), img_idx_rep_prev] , -1)
 
     # render points at t - 1
-    raw_prev = network_query_fn(pts_prev, viewdirs, network_fn, current_iter) # current_iter is added by shindy for regularize
+    raw_prev = network_query_fn(pts_prev, viewdirs, network_fn)
     raw_rgba_prev = raw_prev[:, :, :4]
     raw_sf_prev2prevprev = raw_prev[:, :, 4:7]
     raw_sf_prev2ref = raw_prev[:, :, 7:10]
@@ -2132,7 +2086,7 @@ def render_rays(img_idx,
     ret['rgb_map_prev_dy'] = rgb_map_prev_dy # warped frame by prev2ref
     
     # render points at t + 1
-    raw_post = network_query_fn(pts_post, viewdirs, network_fn, current_iter) # current_iter is added by shindy for regularize
+    raw_post = network_query_fn(pts_post, viewdirs, network_fn)
     raw_rgba_post = raw_post[:, :, :4]
     raw_sf_post2ref = raw_post[:, :, 4:7]
     raw_sf_post2postpost = raw_post[:, :, 7:10]
@@ -2174,7 +2128,7 @@ def render_rays(img_idx,
         ret['raw_pts_pp'] = pts_prevprev[:, :, :3]
 
         if chain_5frames:
-            raw_prevprev = network_query_fn(pts_prevprev, viewdirs, network_fn, current_iter)
+            raw_prevprev = network_query_fn(pts_prevprev, viewdirs, network_fn)
             raw_rgba_prevprev = raw_prevprev[:, :, :4]
 
             # render from t - 2
@@ -2194,7 +2148,7 @@ def render_rays(img_idx,
         ret['raw_pts_pp'] = pts_postpost[:, :, :3]
 
         if chain_5frames:
-            raw_postpost = network_query_fn(pts_postpost, viewdirs, network_fn, current_iter)
+            raw_postpost = network_query_fn(pts_postpost, viewdirs, network_fn)
             raw_rgba_postpost = raw_postpost[:, :, :4]
 
             # render from t + 2

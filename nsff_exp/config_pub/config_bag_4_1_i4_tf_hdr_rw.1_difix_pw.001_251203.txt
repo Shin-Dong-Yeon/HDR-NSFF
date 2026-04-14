@@ -1,6 +1,6 @@
-expname = bag_4_1_i4_tf_hdr_rw.1_difix_pw.001_251203
+expname = bag_4_1_i4_tf_hdr_rw.1_difix_pw.001_260414
 
-basedir = ./logs/hdr-nsff/_gopro/251129
+basedir = ./logs_home_gopro/_gopro_pub
 datadir = ../dataset_gpu/gopro/251129/bag_4_1/i4/dense
 
 dataset_type = llff
@@ -45,7 +45,7 @@ use_sat_mask=True
 ref_idx=0
 use_tone_mapping_camparam=True
 
-i_weights=50000
+i_weights=10000
 N_iters=250001
 disp_model=depth-anything
 disp_loss=depth-anything-o1
