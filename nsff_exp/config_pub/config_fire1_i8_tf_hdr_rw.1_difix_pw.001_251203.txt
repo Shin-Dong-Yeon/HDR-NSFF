@@ -6,7 +6,6 @@ datadir = ../dataset_gpu/gopro/251128/fire_1/i8/dense
 dataset_type = llff
 
 factor = 2
-llffhold = 10
 
 N_rand = 1024
 N_samples = 128
@@ -18,7 +17,6 @@ raw_noise_std = 1e0
 no_ndc = False
 lindisp = False
 
-no_batching = True
 spherify = False
 decay_depth_w = True
 decay_optical_flow_w = True
@@ -53,8 +51,6 @@ disp_model=depth-anything
 disp_loss=depth-anything-o1
 
 traj_flow=True
-w_traj_flow = 0.02
-decay_traj_flow_w=True
 
 final_height=360
 

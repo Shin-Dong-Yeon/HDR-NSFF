@@ -21,8 +21,6 @@ def config_parser():
                         help='training image height, default is 512x288')
     
     # HDR-NSFF add-ons ##
-    parser.add_argument("--use_posenc_mask", action='store_true',
-                        help='use positional encoding mask')
     parser.add_argument("--sf_multires", type=int, default=0,
                         help='log2 of max freq for positional encoding (3D location)')
     parser.add_argument("--debug", action='store_true', help='debugging mode')
@@ -32,27 +30,22 @@ def config_parser():
     parser.add_argument("--unit_sf_bidirection", action='store_true', help='change bidirection loss as unit bidirection loss')
     
     parser.add_argument("--half_res", action='store_true', default=True, help='option for blender dataset')
-    parser.add_argument("--testkip", type=int, default=1, help='option for blender dataset')
-    
+
     parser.add_argument("--render_tm", type=str, default='tm', help='options: tm, wb, no')
     parser.add_argument("--skip_sf_reg_loss", action='store_true', default=False, help='option for not using sf_reg_loss')
     parser.add_argument("--skip_sf_sm_loss", action='store_true', default=False, help='option for not using sf_sm_loss')
     parser.add_argument("--skip_prob_reg_loss", action='store_true', default=False, help='option for not using prob_reg_loss')
     parser.add_argument("--traj_flow", action='store_true', default=False, help='option for using traj_flow')
-    parser.add_argument("--w_traj_flow", type=float, default=0.02, help='weights of traj_flow loss')
-    parser.add_argument("--decay_traj_flow_w", action='store_true', default=False, help='decay traj_flow weights')
     parser.add_argument("--step_frame", type=int, default=1, help='step frame for loading data')
     parser.add_argument("--render_train", action='store_true', default=False, help='render train data')
     parser.add_argument("--share_crf", action='store_true', default=False, help='share crf')
     parser.add_argument("--share_wb", action='store_true', default=False, help='share just 3 wb')
     parser.add_argument("--log_scale", action='store_true', default=False, help='use log scale crf')
     parser.add_argument("--unit_loss", action='store_true', default=False, help='use unit loss')
-    parser.add_argument("--w_crf", type=float, default=0.001, help='weights of crf loss')
     parser.add_argument("--w_unit", type=float, default=0.001, help='weights of unit loss')
     parser.add_argument("--ref_idx", type=int, default=0, help='reference index for crf')
     parser.add_argument("--disp_loss", type=str, default=None, help='options: depth-anything-o1 / depth-anything-o2')
     parser.add_argument("--no_chain_5frames", action='store_true', default=False, help='options: True / False')
-    parser.add_argument("--chain_5frames_flow", action='store_true', default=False, help='optionsl Ture / False')
     parser.add_argument("--custom_times", type=int, default=None, help='render at just custom times')
     parser.add_argument("--leaky_th_h", type=float, default=0.9, help='leaky threshold high')
     parser.add_argument("--leaky_th_l", type=float, default=0.15, help='leaky threshold high')
@@ -65,7 +58,6 @@ def config_parser():
     parser.add_argument("--patch_size", type=int, default=32)
     parser.add_argument("--w_percept", type=float, default=0.01)
     parser.add_argument("--use_percept", action='store_true', default=False)
-    parser.add_argument("--start_percept", type=int, default=149999)
     parser.add_argument("--render_interpolate", action='store_true', default=False)
     parser.add_argument("--decay_crf_w", action='store_true', default=False)
     parser.add_argument("--crf_stop_step", type=int, default=9999999)
@@ -84,8 +76,6 @@ def config_parser():
     parser.add_argument("--difix_interval", type=int, default=2000)
     parser.add_argument("--difix_kview", type=int, default=8)
     parser.add_argument("--difix_kview_step", type=int, default=1)
-    parser.add_argument("--difix_save_root", type=str, default="difix_views")
-    parser.add_argument("--w_difix_render", type=float, default=1.)
     parser.add_argument("--difix_ver2", action='store_true', default=False)
     parser.add_argument("--difix_start_step", type=int, default=None)
     parser.add_argument("--difix_freeze_rigid", action='store_true', default=False)
@@ -117,10 +107,6 @@ def config_parser():
                         help='layers in network')
     parser.add_argument("--netwidth", type=int, default=256, 
                         help='channels per layer')
-    parser.add_argument("--netdepth_fine", type=int, default=8, 
-                        help='layers in fine network')
-    parser.add_argument("--netwidth_fine", type=int, default=256, 
-                        help='channels per layer in fine network')
     parser.add_argument("--N_rand", type=int, default=32*32*4, 
                         help='batch size (number of random rays per gradient step)')
     parser.add_argument("--lrate", type=float, default=5e-4, 
@@ -131,8 +117,6 @@ def config_parser():
                         help='number of rays processed in parallel, decrease if running out of memory')
     parser.add_argument("--netchunk", type=int, default=1024*128, 
                         help='number of pts sent through network in parallel, decrease if running out of memory')
-    parser.add_argument("--no_batching", action='store_true', 
-                        help='only take random rays from 1 image at a time')
     parser.add_argument("--no_reload", action='store_true', 
                         help='do not reload weights from saved ckpt')
     parser.add_argument("--ft_path", type=str, default=None, 
@@ -184,9 +168,6 @@ def config_parser():
                         help='sampling linearly in disparity rather than depth')
     parser.add_argument("--spherify", action='store_true', 
                         help='set for spherical 360 scenes')
-    parser.add_argument("--llffhold", type=int, default=8, 
-                        help='will take every 1/N images as LLFF test set, paper uses 8')
-
     parser.add_argument("--target_idx", type=int, default=10, 
                         help='target_idx')
     parser.add_argument("--num_extra_sample", type=int, default=512, 
