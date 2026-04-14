@@ -41,3 +41,6 @@ nsff_exp/configs/
 
 # Environment
 .env
+
+# Data
+data/*
