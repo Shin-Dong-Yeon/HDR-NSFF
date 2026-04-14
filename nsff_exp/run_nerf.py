@@ -953,20 +953,21 @@ def train():
                   f'frozen_forever={Cam_param.is_frozen_forever()}')
 
         if not debug_mode:
-            wandb.log({
-                'loss':                  loss.item(),
-                'render_loss':           rl,
-                'bidirection_loss':      sf_cycle_loss.item(),
-                'sf_reg_loss':           sf_reg_loss.item(),
-                'depth_loss':            depth_loss.item(),
+            log_dict = {
+                'loss':             loss.item(),
+                'render_loss':      rl,
+                'bidirection_loss': sf_cycle_loss.item(),
+                'sf_reg_loss':      sf_reg_loss.item(),
+                'depth_loss':       depth_loss.item(),
                 ('traj_loss' if args.traj_flow else 'flow_loss'): flow_loss.item(),
-                'sf_sm_loss':            sf_sm_loss.item(),
-                'prob_reg_loss':         prob_reg_loss.item(),
-                'entropy_loss':          entropy_loss.item(),
-                'crf_smoothness_loss':   crf_smooth_loss.item()    if crf_smooth_loss    is not None else None,
-                'crf_monotonicity_loss': crf_monotonic_loss.item() if crf_monotonic_loss is not None else None,
-                'perceptual_loss':       percept_loss.item()        if percept_loss       is not None else None,
-            }, step=i)
+                'sf_sm_loss':       sf_sm_loss.item(),
+                'prob_reg_loss':    prob_reg_loss.item(),
+                'entropy_loss':     entropy_loss.item(),
+            }
+            if crf_smooth_loss    is not None: log_dict['crf_smoothness_loss']   = crf_smooth_loss.item()
+            if crf_monotonic_loss is not None: log_dict['crf_monotonicity_loss'] = crf_monotonic_loss.item()
+            if percept_loss       is not None: log_dict['perceptual_loss']        = percept_loss.item()
+            wandb.log(log_dict, step=i)
 
         # ── Learning Rate Decay ────────────────────────────────────────────────
         if args.stage == 2:
