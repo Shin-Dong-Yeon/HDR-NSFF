@@ -23,6 +23,7 @@ nsff_scripts/alt_cuda_corr/*.so
 wandb/
 runs/
 *.tfevents.*
+logs/*
 
 # IDE / OS
 .vscode/
