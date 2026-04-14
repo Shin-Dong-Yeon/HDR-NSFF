@@ -1,6 +1,3 @@
 [submodule "nsff_exp/Difix3D"]
 	path = nsff_exp/Difix3D
 	url = https://github.com/nv-tlabs/Difix3D.git
-[submodule "nsff_exp/Depth-Anything-V2"]
-	path = nsff_exp/Depth-Anything-V2
-	url = https://github.com/DepthAnything/Depth-Anything-V2.git
