@@ -12,7 +12,6 @@ from run_nerf_helpers import *
 from posenc_utils import *
 from cam_param import *
 from glob import glob
-import ffmpeg
 import matplotlib.cm as cm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -87,12 +86,12 @@ def splat_rgb_img(ret, ratio, R_w2t, t_w2t, j, H, W, focal, fwd_flow):
 
 from poseInterpolator import *
 
-def render_slowmo_bt(disps, render_poses, bt_poses, 
+def render_slowmo_bt(disps, render_poses, bt_poses,
                      hwf, chunk, render_kwargs, render_mode, render_tm,
                      gt_imgs=None, savedir=None, camparam=None,
                      render_factor=0, target_idx=10, custom_times=None, log_scale=False,
                      start=None):
-    # import scipy.io
+    import ffmpeg  # only needed for video export in this render mode
 
     H, W, focal = hwf
 
@@ -598,11 +597,12 @@ def render_slowmo_bt(disps, render_poses, bt_poses,
     #     images2video(save_dynamic_dir, target_idx)
 
 @torch.no_grad()
-def render_lockcam_slowmo(ref_c2w, num_img, 
-                        hwf, chunk, render_kwargs,
-                        gt_imgs=None, savedir=None, 
-                        render_factor=0,
-                        target_idx=5, camparam=None, render_tm=None):
+def render_lockcam_slowmo(ref_c2w, num_img,
+                          hwf, chunk, render_kwargs,
+                          gt_imgs=None, savedir=None,
+                          render_factor=0,
+                          target_idx=5, camparam=None, render_tm=None):
+    import ffmpeg  # only needed for video export in this render mode
 
     H, W, focal = hwf
 
@@ -801,11 +801,12 @@ def render_lockcam_slowmo(ref_c2w, num_img,
     # images2video(save_img_dir, target_idx)
     
 @torch.no_grad()
-def render_lockcam_slowmo_full(ref_c2w, num_img, 
-                        hwf, chunk, render_kwargs,
-                        gt_imgs=None, savedir=None, 
-                        render_factor=0,
-                        target_idx=5, camparam=None, render_tm=None):
+def render_lockcam_slowmo_full(ref_c2w, num_img,
+                               hwf, chunk, render_kwargs,
+                               gt_imgs=None, savedir=None,
+                               render_factor=0,
+                               target_idx=5, camparam=None, render_tm=None):
+    import ffmpeg  # only needed for video export in this render mode
 
     H, W, focal = hwf
 
