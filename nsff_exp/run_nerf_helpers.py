@@ -410,30 +410,8 @@ def compute_mae_sat(pred, gt, mask, sat_mask, dim=2):
     num_pix = torch.sum(mask_rep) + 1e-8
     return torch.sum( torch.abs(pred - gt) * mask_rep * sat_mask)/ num_pix
 
-def mixed_loss_basic(pred, tgt, weight=None, alpha=0.01):
-    """
-    mse(pred,tgt,weight) + alpha * mae(pred,tgt,weight)
-    weight: (N,1) or (N,) or broadcastable, None이면 균등.
-    """
-    if weight is None:
-        return F.mse_loss(pred, tgt) + alpha * F.l1_loss(pred, tgt)
-    else:
-        # 기존 compute_mse / compute_mae 유틸을 재사용 (가중치 포함)
-        return compute_mse(pred, tgt, weight) + alpha * compute_mae(pred, tgt, weight)
 
-def mixed_loss_sat(pred, tgt, weight=None, sat_mask=None, alpha=0.01):
-    """
-    saturation 마스크 버전:
-    mse_sat + alpha * mae_sat
-    """
-    if sat_mask is None:
-        return mixed_loss_basic(pred, tgt, weight, alpha)
-    else:
-        return compute_mse_sat(pred, tgt, weight, sat_mask) + \
-               alpha * compute_mae_sat(pred, tgt, weight, sat_mask)
-
-
-# def compute_depth_loss_mask(pred_depth, gt_depth, mask): 
+# def compute_depth_loss_mask(pred_depth, gt_depth, mask):
 
 #     mask = torch.squeeze(mask)
 

@@ -448,17 +448,15 @@ def train():
             images, poses,
             args.difix_kview, args.difix_kview_step,
             difix_save_root, args.datadir,
-            args.difix_use_depth, args.mask_warp,
+            use_depth=False, mask_warp=False,
             motion_masks=masks,
-            weights_map_ray=args.difix_weights_map_ray,
-            use_mv_mask=args.difix_use_mv_mask,
-            inter_pose=args.difix_inter_pose,
+            weights_map_ray=True,
+            use_mv_mask=True,
+            inter_pose=False,
         )
 
         images_orig = images
         poses_orig  = poses
-        if args.difix_use_depth:
-            depths_orig = depths
         is_syn = 1
 
         if global_step >= difix_start_step:
@@ -473,18 +471,12 @@ def train():
             next_refresh   = difix_log_step + args.difix_interval
 
             if os.path.exists(difix_save_root):
-                if args.difix_ver2:
-                    difix_updater.update(difix_log_step, difix_pipe, images_orig,
-                                         Cam_param, args.difix_gt_ref, args.difix_gt_ref_ratio)
-                    images_syn = difix_updater.synthetic_imgs.to(images.device)
-                    poses_syn  = difix_updater.synthetic_poses.to(poses.device)
-                    images = torch.cat([images_orig, images_syn], 0)
-                    poses  = torch.cat([poses_orig,  poses_syn],  0)
-                    if args.difix_use_depth:
-                        depths_syn = difix_updater.synthetic_depths.to(depths.device)
-                        depths = torch.cat([depths_orig, depths_syn], 0)
-                else:
-                    difix_updater.refresh(difix_log_step, difix_pipe, images, Cam_param)
+                difix_updater.update(difix_log_step, difix_pipe, images_orig,
+                                     Cam_param, True, args.difix_gt_ref_ratio)
+                images_syn = difix_updater.synthetic_imgs.to(images.device)
+                poses_syn  = difix_updater.synthetic_poses.to(poses.device)
+                images = torch.cat([images_orig, images_syn], 0)
+                poses  = torch.cat([poses_orig,  poses_syn],  0)
         else:
             # Phase-1: difix not yet active; pipeline will be initialized lazily.
             next_refresh = difix_start_step
@@ -509,60 +501,36 @@ def train():
             difix_pipe = DifixPipeline.from_pretrained("nvidia/difix_ref", trust_remote_code=True)
             difix_pipe.to(device)
 
-            if args.difix_ver2:
-                difix_updater.update(i, difix_pipe, images_orig,
-                                     Cam_param, args.difix_gt_ref, args.difix_gt_ref_ratio)
-                images_syn = difix_updater.synthetic_imgs.to(images.device)
-                poses_syn  = difix_updater.synthetic_poses.to(poses.device)
-                images = torch.cat([images_orig, images_syn], 0)
-                poses  = torch.cat([poses_orig,  poses_syn],  0)
-                if args.difix_use_depth:
-                    depths_syn = difix_updater.synthetic_depths.to(depths.device)
-                    depths = torch.cat([depths_orig, depths_syn], 0)
-            else:
-                difix_updater.refresh(i, difix_pipe, images, Cam_param)
+            difix_updater.update(i, difix_pipe, images_orig,
+                                 Cam_param, True, args.difix_gt_ref_ratio)
+            images_syn = difix_updater.synthetic_imgs.to(images.device)
+            poses_syn  = difix_updater.synthetic_poses.to(poses.device)
+            images = torch.cat([images_orig, images_syn], 0)
+            poses  = torch.cat([poses_orig,  poses_syn],  0)
             next_refresh = i + args.difix_interval
 
         # ── Frame & Ray Sampling ───────────────────────────────────────────────
         img_i = np.random.choice(i_train)
 
-        if args.use_difix and args.difix_ver2 and i > difix_start_step:
+        if args.use_difix and i > difix_start_step:
             use_difix_flag = True
-
-            if args.balanced_sampling:
-                is_syn = 0 if (np.random.rand() < args.difix_gt_ratio) else 1
-            else:
-                is_syn = np.random.choice([0, len(i_train)])
-
-            # Optionally freeze CamParam while training on difix synthetic views
-            if args.use_tone_mapping and args.difix_freeze_cam and Cam_param is not None:
-                if is_syn != 0:
-                    Cam_param.freeze_for_iter()
-                    freeze_cam_this_iter = True
-                else:
-                    Cam_param.unfreeze_for_iter()
+            is_syn = 0 if (np.random.rand() < args.difix_gt_ratio) else 1
 
             if is_syn != 0:
-                which_syn  = np.random.choice(args.difix_kview)
+                which_syn   = np.random.choice(args.difix_kview)
                 img_i_difix = len(i_train) + img_i * args.difix_kview + which_syn
-                if args.difix_freeze_rigid:
-                    for p in render_kwargs_train['network_rigid'].parameters():
-                        p.requires_grad = False
-                    render_kwargs_train['network_rigid'].eval()
-                if args.difix_l1:
-                    l1_flag = True
+                for p in render_kwargs_train['network_rigid'].parameters():
+                    p.requires_grad = False
+                render_kwargs_train['network_rigid'].eval()
             else:
                 img_i_difix = img_i
-                if args.difix_freeze_rigid:
-                    for p in render_kwargs_train['network_rigid'].parameters():
-                        p.requires_grad = True
-                    render_kwargs_train['network_rigid'].train()
-                if args.difix_l1:
-                    l1_flag = False
+                for p in render_kwargs_train['network_rigid'].parameters():
+                    p.requires_grad = True
+                render_kwargs_train['network_rigid'].train()
 
             target   = images[img_i_difix].cuda()
             pose     = poses[img_i_difix, :3, :4]
-            depth_gt = depths[img_i_difix if args.difix_use_depth else img_i].cuda()
+            depth_gt = depths[img_i].cuda()
         else:
             target   = images[img_i].cuda()
             pose     = poses[img_i, :3, :4]
@@ -620,21 +588,15 @@ def train():
                            torch.linspace(0, W - 1, W)), -1
         ).reshape(-1, 2)  # (H*W, 2)
 
-        if args.use_difix and args.difix_ver2 and i > difix_start_step and is_syn:
+        if args.use_difix and i > difix_start_step and is_syn:
             # Difix step: patch-based or motion-weighted sampling on synthetic view
             if args.use_percept:
-                if args.difix_weights_map_ray:
-                    coords_np = np.asarray(difix_updater.motion_coords[img_i][which_syn], dtype=np.int64)
-                    select_coords = sample_mixed_patches(coords_np, H, W, patch_sz, 1, 1.0, device)
-                else:
-                    select_coords = sample_path_coords(H, W, patch_sz).long().cuda()
-            elif args.difix_weights_map_ray:
+                coords_np = np.asarray(difix_updater.motion_coords[img_i][which_syn], dtype=np.int64)
+                select_coords = sample_mixed_patches(coords_np, H, W, patch_sz, 1, 1.0, device)
+            else:
                 difix_coords = torch.Tensor(difix_updater.motion_coords[img_i][which_syn]).cuda()
                 inds = np.random.choice(difix_coords.shape[0], size=[N_rand], replace=False)
                 select_coords = difix_coords[inds].long()
-            else:
-                inds = np.random.choice(coords.shape[0], size=[N_rand], replace=False)
-                select_coords = coords[inds].long()
         elif args.use_motion_mask and i < decay_iteration * 1000:
             # Hard mining: over-sample motion-region pixels during early training
             inds_hard = np.random.choice(hard_coords.shape[0],
@@ -682,10 +644,10 @@ def train():
                      **render_kwargs_train)
 
         # Refresh Difix synthetic views at fixed intervals
-        if args.use_difix and args.difix_ver2 and i >= difix_start_step:
+        if args.use_difix and i >= difix_start_step:
             if global_step >= next_refresh:
                 difix_updater.update(global_step, difix_pipe, images, Cam_param,
-                                     args.difix_gt_ref, args.difix_gt_ref_ratio)
+                                     True, args.difix_gt_ref_ratio)
                 next_refresh  += args.difix_interval
                 images_syn = difix_updater.synthetic_imgs.to(images.device)
                 poses_syn  = difix_updater.synthetic_poses.to(poses.device)
@@ -713,7 +675,7 @@ def train():
         # ── Rendered Optical Flow (projected from 3D scene flow) ───────────────
         pose_post = poses[min(img_i + 1, int(num_img) - 1), :3, :4]
         pose_prev = poses[max(img_i - 1, 0),                :3, :4]
-        if args.use_difix and args.difix_ver2 and i > difix_start_step:
+        if args.use_difix and i > difix_start_step:
             pose = poses[img_i]
         render_of_fwd, render_of_bwd = compute_optical_flow(
             pose_post, pose, pose_prev, H, W, focal, ret)
@@ -726,7 +688,7 @@ def train():
 
         # Permanently freeze CamParam once CRF training phase ends
         if (args.use_tone_mapping and not Cam_param.is_frozen_forever()
-                and global_step > crf_stop_step and not args.difix_freeze_cam):
+                and global_step > crf_stop_step):
             print(f'[Step {global_step}] Freezing CamParam permanently.')
             Cam_param.freeze_forever()
 
@@ -748,17 +710,12 @@ def train():
         # Helper: dispatch to the appropriate photometric loss variant
         def _render_loss(pred, tgt, weight=None):
             if args.use_sat_mask:
-                if args.render_l1_l2:
-                    return mixed_loss_sat(pred, tgt, weight, sat_mask,
-                                         getattr(args, 'w_l1_l2', 0.01))
-                elif args.use_render_l1 or l1_flag:
+                if args.use_render_l1 or l1_flag:
                     return compute_mae_sat(pred, tgt, weight, sat_mask)
                 else:
                     return compute_mse_sat(pred, tgt, weight, sat_mask)
             else:
-                if args.render_l1_l2:
-                    return mixed_loss_basic(pred, tgt, weight, getattr(args, 'w_l1_l2', 0.01))
-                elif args.use_render_l1 or l1_flag:
+                if args.use_render_l1 or l1_flag:
                     return compute_mae(pred, tgt, weight) if weight is not None else img2mae(pred, tgt)
                 else:
                     return compute_mse(pred, tgt, weight) if weight is not None else img2mse(pred, tgt)
@@ -780,17 +737,13 @@ def train():
                                         weight_map_prev.unsqueeze(-1) * weights_map_dd)
 
         # Photometric loss on composite (static + dynamic) render
-        if args.render_l1_l2:
-            alpha = getattr(args, 'w_l1_l2', 0.01)
-            render_loss += (F.mse_loss(rgb_map_ref[:N_rand], target_rgb[:N_rand])
-                            + alpha * F.l1_loss(rgb_map_ref[:N_rand], target_rgb[:N_rand]))
-        elif args.use_render_l1 or l1_flag:
+        if args.use_render_l1 or l1_flag:
             render_loss += img2mae(rgb_map_ref[:N_rand], target_rgb[:N_rand])
         else:
             render_loss += img2mse(rgb_map_ref[:N_rand], target_rgb[:N_rand])
 
         # Perceptual loss on patch-sampled difix synthetic views
-        if args.use_difix and args.difix_ver2 and i > difix_start_step and is_syn and args.use_percept:
+        if args.use_difix and i > difix_start_step and is_syn and args.use_percept:
             def _patch_feats(img):
                 return maxpool_feats(perceptual_net(
                     img.reshape(patch_sz, patch_sz, 3).permute(2, 0, 1).unsqueeze(0)))
@@ -851,13 +804,8 @@ def train():
                    if args.decay_optical_flow_w else args.w_optical_flow)
 
         # Suppress depth / flow losses on difix synthetic views
-        if args.use_difix and args.difix_ver2 and i > difix_start_step and is_syn:
-            if not args.difix_use_depth:
-                w_depth = 0.
-            elif args.difix_use_depth_weight != 1.:
-                w_depth *= args.difix_use_depth_weight
-            elif args.difix_use_depth_weight_explicit != 0.:
-                w_depth = args.difix_use_depth_weight_explicit
+        if args.use_difix and i > difix_start_step and is_syn:
+            w_depth = 0.
             w_of = 0.
 
         w_crf_smooth = (args.w_crf_smooth / (decay_factor ** divsor)
@@ -887,8 +835,6 @@ def train():
                          + w_of * compute_mae(render_of_bwd, target_of_bwd, target_bwd_mask))
 
         # Optional render loss scaling
-        if args.use_difix and args.difix_ver2 and i > difix_start_step and is_syn and args.difix_w_render != 1.:
-            render_loss = args.difix_w_render * render_loss
         if args.w_render != 1.:
             render_loss = args.w_render * render_loss
 
