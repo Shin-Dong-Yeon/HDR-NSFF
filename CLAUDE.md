@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**HDR-NSFF** is a research project for 4D dynamic scene reconstruction with HDR video rendering. It extends Neural Radiance Fields (NeRF) with Neural Space-Time Flow (NSFF) for dynamic scenes, multi-exposure HDR fusion, and camera response function (CRF) learning.
+**HDR-NSFF** is a research project for 4D dynamic scene reconstruction with HDR video rendering. Extends NeRF + NSFF for dynamic scenes, multi-exposure HDR fusion, and camera response function (CRF) learning.
 
 ## Key Commands
 
@@ -14,28 +14,20 @@ cd nsff_scripts/alt_cuda_corr/
 python setup.py build_ext --inplace
 ```
 
-### Download Pre-trained Models
-```bash
-bash nsff_scripts/download_models.sh
-```
-
 ### Preprocessing Pipeline
 ```bash
-# 1. Extract camera poses
+# 1. Extract camera poses (COLMAP)
 python nsff_scripts/save_poses_nerf.py --data_path <dataset_path>
 
-# 2. Organize frames
-python nsff_scripts/preprocess.py --src_dir <video_data>
+# 2. Resize images → outputs images_{W}x{H}/
+python nsff_scripts/resize_images.py --data_path <data> --resize_height <H>
 
-# 3. Depth estimation (choose one)
-python nsff_scripts/run_midas.py --data_path <data> --resize_height <H>
-python nsff_scripts/run_midas_hdr.py --data_path <data> --resize_height <H>
+# 3. Metric depth estimation → outputs depth-anything/ (npy) and depth-anything-viz/ (png)
+python nsff_exp/Depth-Anything-V2/metric_depth/run.py --encoder vitl \
+    --load-from nsff_exp/Depth-Anything-V2/metric_depth/checkpoints/depth_anything_v2_metric_hypersim_vitl.pth \
+    --max-depth 20 --data-dir <dataset_path> --save-numpy
 
-# 4. Optical flow
-python nsff_scripts/run_flows_video.py --model models/raft-things.pth --data_path <data> --step 1 --skip_moseg
-python nsff_scripts/run_flows_video_hdr.py --model <raft_model> --data_path <data> --step 1
-
-# 5. Gamma correction (for HDR multi-exposure data)
+# 4. Gamma correction (for HDR multi-exposure data)
 python nsff_scripts/run_gamma_correction.py --data_path <data>
 python nsff_scripts/run_gamma_correction_3exp.py --data_path <data>  # 3-exposure variant
 ```
@@ -52,24 +44,12 @@ cd nsff_exp/
 python evaluation_gopro.py --config configs/<config_file.txt>
 python evaluation_dslr.py --config configs/<config_file.txt>
 python evaluation_gopro_time.py --config configs/<config_file.txt>
+python evaluation_gopro_time_36.py --config configs/<config_file.txt>
 
-# Render specific modes
-python run_nerf.py --config <config> --render_lockcam --render_tm wb --target_idx 2
-python run_nerf.py --config <config> --render_bt --target_idx 20   # Space-time interpolation
-python run_nerf.py --config <config> --render_train                # Render training views
-```
-
-### HDR Metrics
-```bash
-cd nsff_exp/
-python hdr_evaluation/hdr_video_mertens.py --src_dir <ldr_image_dir>
-python hdr_evaluation/eval.py  # Compute PSNR/SSIM/LPIPS
-```
-
-### Fine-tuning
-```bash
-cd nsff_exp/
-python finetune.py --config <config_file> [additional args]
+# Render modes
+python run_nerf.py --config <config> --render_lockcam --target_idx 2
+python run_nerf.py --config <config> --render_bt --target_idx 20
+python run_nerf.py --config <config> --render_train
 ```
 
 No test suite or linter is configured — this is a research codebase.
@@ -79,78 +59,77 @@ No test suite or linter is configured — this is a research codebase.
 ### Data Flow
 
 ```
-Video Frames (GoPro/DSLR/Blender)
+Video Frames (GoPro/DSLR)
     ↓
 nsff_scripts/ [PREPROCESSING]
-  save_poses_nerf.py → Camera poses (COLMAP/Blender metadata)
-  preprocess.py      → Frame extraction, resizing, organization
-  run_midas*.py      → Monocular depth maps
-  run_flows_video*.py→ Optical flow (RAFT, accelerated via alt_cuda_corr)
-  run_gamma_*.py     → Exposure compensation
+  save_poses_nerf.py   → Camera poses via COLMAP
+  resize_images.py     → Resized frames (images_{W}x{H}/)
+  Depth-Anything-V2    → Metric depth maps (depth-anything/)
+  run_gamma_*.py       → Exposure compensation for HDR
     ↓
 nsff_exp/ [TRAINING & RENDERING]
-  run_nerf.py        → Main training loop
-  render_utils.py    → Volumetric rendering, tone mapping
-  cam_param.py       → HDR camera parameter learning
+  run_nerf.py          → Main training loop, loss computation
+  render_utils.py      → Volumetric rendering, scene flow warping, tone mapping
+  cam_param.py         → CRF + white balance learning
     ↓
-nsff_exp/hdr_evaluation/ [METRICS]
-  eval.py            → PSNR/SSIM/LPIPS
+evaluation_*.py [METRICS]
+  evaluation_gopro.py / evaluation_dslr.py → PSNR/SSIM/LPIPS
+  evaluation_gopro_time*.py                → Temporal interpolation evaluation
 ```
 
-### Core Modules (all in `nsff_exp/`)
+### Core Modules (`nsff_exp/`)
 
-- **`run_nerf.py`** (1981 lines) — Entry point: loads data, trains model, checkpoints, loss computation. Integrates all components.
-- **`render_utils.py`** (2316 lines) — Ray casting, volumetric rendering, scene flow warping, depth-guided sampling, tone mapping (Reinhard, Filmic, WB).
-- **`run_nerf_helpers.py`** — NeRF MLP architecture (8-layer, width 256, skip connections), positional encoding (frequency-based).
-- **`cam_param.py`** (37KB) — Camera Response Function (CRF) parameterization, white balance estimation, leaky thresholding, inverse tone mapping.
-- **`load_llff.py` / `load_blender.py`** — Dataset loaders for real (LLFF format) and synthetic (Blender) data.
-- **`config.py`** — 156+ config arguments via `configargparse`.
-- **`difix_updater.py`** (52KB) — Iterative 3D geometry refinement (enabled via `use_difix = True`).
-- **`models/`** — LPIPS perceptual loss (VGG/AlexNet features).
+- **`run_nerf.py`** — Entry point: data loading, training loop, checkpointing, loss computation.
+- **`render_utils.py`** — Ray casting, volumetric rendering, scene flow warping, tone mapping (Reinhard/Filmic/WB).
+- **`run_nerf_helpers.py`** — NeRF MLP (8-layer, width 256, skip connections), positional encoding.
+- **`cam_param.py`** — CRF parameterization, white balance estimation, leaky thresholding, inverse tone mapping.
+- **`config.py`** — All config arguments via `configargparse`. All evaluation scripts share this via `from config import config_parser`.
+- **`difix_updater.py`** — Iterative 3D geometry refinement (enabled via `use_difix = True`).
+- **`load_llff.py` / `load_blender.py`** — Dataset loaders.
 
 ### Loss Functions
 
 | Loss | Config Key | Purpose |
 |------|-----------|---------|
 | Photometric | (base) | MSE/MAE on rendered vs. target RGB |
-| Depth | `w_depth` | Align with MiDas/Depth-Anything estimates |
-| Optical Flow | `w_optical_flow` | Match predicted flow with RAFT estimates |
+| Depth | `w_depth` | Align with Depth-Anything estimates |
+| Optical Flow | `w_optical_flow` | Match predicted flow |
 | Perceptual | `w_percept` | LPIPS feature-level similarity |
-| CRF | `w_crf` | Camera response function monotonicity |
-| White Balance | `w_unit` | White balance unit constraints |
-| Scene Flow | implicit | Smoothness and probability regularization |
+| Scene Flow Cycle | `w_cycle` | Bidirectional scene flow consistency |
+| Scene Flow Reg | `w_sf_reg` | Encourage small flow magnitude |
+| Scene Flow Smooth | `w_sm` | Spatial smoothness + least kinetic energy |
+| Prob Reg | `w_prob_reg` | Disocclusion weight regularization |
+| CRF Smooth | `w_crf_smooth` | CRF smoothness |
 
 ### Config System
 
-Configs live in `nsff_exp/configs/` as `.txt` files parsed by `configargparse`. Key parameters:
+Configs in `nsff_exp/configs/` as `.txt` files. Key parameters:
 
 ```
 dataset_type = llff           # or 'blender'
-disp_model = midas            # midas / aligned / depthcrafter / depth-anything
-render_tm = tm                # tm (tone mapping) / wb (white balance) / no
-share_crf = False             # Shared CRF across frames
-use_difix = True              # Enable iterative 3D refinement
-use_percept = True            # Enable perceptual loss
-chain_sf = True               # Chain scene flow across frames
-start_frame / end_frame / step_frame  # Frame range selection
+disp_model = depth-anything   # midas / aligned / depth-anything
+render_tm = tm                # tm / wb / no
+share_crf = False
+use_difix = True              # iterative 3D refinement
+use_percept = True
+chain_sf = True               # 5-frame scene flow chain
+start_frame / end_frame / step_frame
 ```
 
-Sub-directories organize configs by dataset: `configs/gopro/`, `configs/lego/`, `configs/tank/`, `configs/raft-mask/`.
+Sub-directories: `configs/gopro/`, `configs/lego/`, `configs/tank/`.
+Public configs: `config_pub/`.
 
 ### Symbolic Links
 
-The repo uses symlinks to large data stored on a GPU server:
 - `logs/` → `/node_data/shindy/projects/hdr-4d/logs/hdr-nsff/`
 - `dataset_gpu/` → `/node_data/shindy/projects/hdr-4d/dataset_gpu`
 - `dataset_home/` → `/node_data/shindy/projects/hdr-4d/dataset_home`
 
 ## Tech Stack
 
-- **PyTorch** — Neural rendering, optimization (Adam with LR scheduling)
-- **RAFT** (pre-trained `raft-things.pth`) — Optical flow, with custom CUDA correlation kernel in `nsff_scripts/alt_cuda_corr/`
-- **MiDas / Depth-Anything-V2** — Monocular depth estimation
-- **OpenCV** — Image I/O, Mertens HDR fusion, tone mapping
-- **configargparse** — Hierarchical config management
-- **LPIPS** (`lpips` package) — Perceptual loss computation
+- **PyTorch** — Neural rendering, Adam optimizer with LR decay
+- **Depth-Anything-V2** — Metric monocular depth (`nsff_exp/Depth-Anything-V2/`; checkpoint `.pth` files excluded by `.gitignore`)
+- **RAFT** — Optical flow (`raft-things.pth`), with custom CUDA kernel in `nsff_scripts/alt_cuda_corr/`
+- **configargparse** — Hierarchical config (file + CLI args)
 - **Kornia** — Camera geometry (`create_meshgrid`)
 - **Wandb / TensorBoard** — Experiment tracking

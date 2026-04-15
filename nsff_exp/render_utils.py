@@ -1141,7 +1141,6 @@ def render_rays_sm(img_idx,
                 verbose=False,
                 pytest=False,
                 inference=True,
-                new_blending=False,
                 ):
     """Volumetric rendering.
     Args:
@@ -1607,7 +1606,6 @@ def create_nerf(args):
         'white_bkgd' : args.white_bkgd,
         'raw_noise_std' : args.raw_noise_std,
         'inference': False,
-        'new_blending' : args.new_blending,
     }
     # Stage 2
     if args.stage == 2:
@@ -1933,7 +1931,6 @@ def render_rays(img_idx,
                 pytest=False,
                 inference=False,
                 chain_5frames_flow=False,
-                new_blending=False,
                 color_refiner=None,
                 embed_hi_fn=None,
                 embed_dir_fn=None,

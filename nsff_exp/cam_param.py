@@ -442,47 +442,6 @@ class CamParam:
 
         return crf_loss
     
-    def crf_monotonicity_loss(self):
-        if self.tone_mapping == "piece_wise":
-            CRF = list(self.CRF.parameters())[0][:,:,:].to(self.device)
-            diff = CRF[:, 1:, :] - CRF[:, :-1, :]
-            
-            penalty = torch.relu(-diff)
-            mono_loss = torch.sum(penalty)
-        elif self.tone_mapping == "nn":
-            
-            rgb_model = self.rgb_model.to(self.device).eval()
-            x = torch.linspace(0, 1, 256, device=self.device).unsqueeze(1)  
-            
-            if rgb_model.split:
-                y_r = rgb_model.feature_linear_2_r(rgb_model.feature_linear_1_r(x))
-                y_g = rgb_model.feature_linear_2_g(rgb_model.feature_linear_1_g(x))
-                y_b = rgb_model.feature_linear_2_b(rgb_model.feature_linear_1_b(x))
-
-                y_r = rgb_model.sigmoid(y_r).squeeze(1)  # [256]
-                y_g = rgb_model.sigmoid(y_g).squeeze(1)
-                y_b = rgb_model.sigmoid(y_b).squeeze(1)
-
-                loss_r = torch.relu(- (y_r[1:] - y_r[:-1]))
-                loss_g = torch.relu(- (y_g[1:] - y_g[:-1]))
-                loss_b = torch.relu(- (y_b[1:] - y_b[:-1]))
-
-                mono_loss = torch.sum(loss_r + loss_g + loss_b)
-            else:
-                x_rgb = torch.cat([x, x, x], dim=1)  # [256, 3]
-                y = rgb_model(x_rgb)  # [256, 3]
-
-                loss_r = torch.relu(- (y[1:, 0] - y[:-1, 0]))
-                loss_g = torch.relu(- (y[1:, 1] - y[:-1, 1]))
-                loss_b = torch.relu(- (y[1:, 2] - y[:-1, 2]))
-
-                mono_loss = torch.sum(loss_r + loss_g + loss_b)
-            
-        else:
-            mono_loss = torch.tensor([0]).to(self.device)
-            
-        return mono_loss
-    
     def save(self, path):
         if self.tone_mapping == "piece_wise":
             torch.save({

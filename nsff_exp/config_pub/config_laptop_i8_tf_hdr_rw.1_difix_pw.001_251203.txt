@@ -39,7 +39,6 @@ use_tone_mapping=True
 use_initialize=False
 tone_mapping=piece_wise
 crf_start_step=0
-crf_monotonic=False
 
 use_sat_mask=True
 ref_idx=0

@@ -749,8 +749,6 @@ def train():
         else:
             # Late training: weight by predicted dynamic probability map
             weights_map_dd = ret['weights_map_dd'].unsqueeze(-1).detach()
-            if args.use_motion_mask_weights:
-                weights_map_dd = torch.maximum(weights_map_dd, target_mask)
             render_loss  = _render_loss(rgb_map_ref_dy,  target_rgb, weights_map_dd)
             render_loss += _render_loss(rgb_map_post_dy, target_rgb,
                                         weight_map_post.unsqueeze(-1) * weights_map_dd)
@@ -838,10 +836,8 @@ def train():
                 w_depth = args.difix_use_depth_weight_explicit
             w_of = 0.
 
-        w_crf_smooth    = (args.w_crf_smooth    / (decay_factor ** divsor)
-                           if args.decay_crf_w else args.w_crf_smooth)
-        w_crf_monotonic = (args.w_crf_monotonic / (decay_factor ** divsor)
-                           if args.decay_crf_w else args.w_crf_monotonic)
+        w_crf_smooth = (args.w_crf_smooth / (decay_factor ** divsor)
+                        if args.decay_crf_w else args.w_crf_smooth)
 
         # ── Depth Loss ─────────────────────────────────────────────────────────
         if args.aligned_depth:
@@ -884,14 +880,8 @@ def train():
                 loss = loss + crf_smooth_loss
             else:
                 crf_smooth_loss = None
-            if args.crf_monotonic:
-                crf_monotonic_loss = w_crf_monotonic * Cam_param.crf_monotonicity_loss()
-                loss = loss + crf_monotonic_loss
-            else:
-                crf_monotonic_loss = None
         else:
-            crf_smooth_loss    = None
-            crf_monotonic_loss = None
+            crf_smooth_loss = None
 
         if percept_loss is not None:
             loss = loss + percept_loss
@@ -929,9 +919,8 @@ def train():
                 'prob_reg_loss':    prob_reg_loss.item(),
                 'entropy_loss':     entropy_loss.item(),
             }
-            if crf_smooth_loss    is not None: log_dict['crf_smoothness_loss']   = crf_smooth_loss.item()
-            if crf_monotonic_loss is not None: log_dict['crf_monotonicity_loss'] = crf_monotonic_loss.item()
-            if percept_loss       is not None: log_dict['perceptual_loss']        = percept_loss.item()
+            if crf_smooth_loss is not None: log_dict['crf_smoothness_loss'] = crf_smooth_loss.item()
+            if percept_loss    is not None: log_dict['perceptual_loss']     = percept_loss.item()
             wandb.log(log_dict, step=i)
 
         # ── Learning Rate Decay ────────────────────────────────────────────────
@@ -1045,9 +1034,6 @@ def train():
                 cv2.COLORMAP_PLASMA)
             wandb.log({"monocular_disp": wandb.Image(mono_disp)}, step=i)
 
-            if args.use_motion_mask_weights:
-                wandb.log({"motion_mask": wandb.Image(
-                    (torch.clamp(masks[img_i], 0., 1.) * 255).cpu().numpy().astype(np.uint8))}, step=i)
 
             writer.add_image("val/rgb_map_ref",      torch.clamp(ret_v['rgb_map_ref'],    0., 1.), i, dataformats='HWC')
             writer.add_image("val/depth_map_ref",    normalize_depth(ret_v['depth_map_ref']),      i, dataformats='HW')
