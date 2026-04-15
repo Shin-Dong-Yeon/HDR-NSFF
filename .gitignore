@@ -35,7 +35,7 @@ logs/*
 Thumbs.db
 
 # Experiment configs (all except representative public configs in config_pub/)
-nsff_exp/configs/
+nsff_exp/configs_arxiv/
 
 # Logs
 *.log

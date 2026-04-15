@@ -434,15 +434,15 @@ def train():
         args.w_entropy      = 0
 
     # ── Difix3D Setup ──────────────────────────────────────────────────────────
+    # DifixPipeline is loaded lazily: initialized only when difix_start_step is
+    # reached during training, so phase-1 (pre-difix) and phase-2 (difix) can
+    # run in a single continuous training session without manual checkpoint copying.
     use_difix_flag = False
     if args.use_difix:
-        sys.path.append(os.path.join(os.path.dirname(__file__), "Difix3D"))
-        from src.pipeline_difix import DifixPipeline
+        difix_start_step = args.difix_start_step if args.difix_start_step is not None else 200000
+        difix_save_root  = os.path.join(basedir, expname, 'difix_views')
+        difix_pipe       = None  # loaded lazily at difix_start_step
 
-        difix_pipe = DifixPipeline.from_pretrained("nvidia/difix_ref", trust_remote_code=True)
-        difix_pipe.to(device)
-
-        difix_save_root = os.path.join(basedir, expname, 'difix_views')
         difix_updater = DifixUpdater(
             H, W, focal, render, render_kwargs_test,
             images, poses,
@@ -455,39 +455,39 @@ def train():
             inter_pose=args.difix_inter_pose,
         )
 
-        if args.difix_start_step is not None:
-            difix_start_step = args.difix_start_step
-            next_refresh = difix_start_step
+        images_orig = images
+        poses_orig  = poses
+        if args.difix_use_depth:
+            depths_orig = depths
+        is_syn = 1
+
+        if global_step >= difix_start_step:
+            # Resuming a checkpoint taken after difix already started:
+            # load the pipeline immediately and restore synthetic views.
+            sys.path.append(os.path.join(os.path.dirname(__file__), "Difix3D"))
+            from src.pipeline_difix import DifixPipeline
+            difix_pipe = DifixPipeline.from_pretrained("nvidia/difix_ref", trust_remote_code=True)
+            difix_pipe.to(device)
+
             difix_log_step = (global_step // args.difix_interval) * args.difix_interval
-            if difix_log_step != 0 and difix_log_step <= difix_start_step:
-                next_refresh = difix_log_step + args.difix_interval
+            next_refresh   = difix_log_step + args.difix_interval
+
+            if os.path.exists(difix_save_root):
+                if args.difix_ver2:
+                    difix_updater.update(difix_log_step, difix_pipe, images_orig,
+                                         Cam_param, args.difix_gt_ref, args.difix_gt_ref_ratio)
+                    images_syn = difix_updater.synthetic_imgs.to(images.device)
+                    poses_syn  = difix_updater.synthetic_poses.to(poses.device)
+                    images = torch.cat([images_orig, images_syn], 0)
+                    poses  = torch.cat([poses_orig,  poses_syn],  0)
+                    if args.difix_use_depth:
+                        depths_syn = difix_updater.synthetic_depths.to(depths.device)
+                        depths = torch.cat([depths_orig, depths_syn], 0)
+                else:
+                    difix_updater.refresh(difix_log_step, difix_pipe, images, Cam_param)
         else:
-            difix_log_step   = (global_step // args.difix_interval) * args.difix_interval
-            next_refresh     = difix_log_step + args.difix_interval
-            difix_start_step = args.difix_interval
-
-        if args.difix_ver2:
-            images_orig = images
-            poses_orig  = poses
-            if args.difix_use_depth:
-                depths_orig = depths
-            is_syn = 1
-            use_difix_flag = False
-
-        # Restore synthetic views when resuming a checkpoint
-        if os.path.exists(difix_save_root) or difix_log_step != 0:
-            if args.difix_ver2:
-                difix_updater.update(difix_log_step, difix_pipe, images_orig,
-                                     Cam_param, args.difix_gt_ref, args.difix_gt_ref_ratio)
-                images_syn = difix_updater.synthetic_imgs.to(images.device)
-                poses_syn  = difix_updater.synthetic_poses.to(poses.device)
-                images = torch.cat([images_orig, images_syn], 0)
-                poses  = torch.cat([poses_orig,  poses_syn],  0)
-                if args.difix_use_depth:
-                    depths_syn = difix_updater.synthetic_depths.to(depths.device)
-                    depths = torch.cat([depths_orig, depths_syn], 0)
-            else:
-                difix_updater.refresh(difix_log_step, difix_pipe, images, Cam_param)
+            # Phase-1: difix not yet active; pipeline will be initialized lazily.
+            next_refresh = difix_start_step
 
     # ── Training Loop ──────────────────────────────────────────────────────────
     for i in range(start, args.N_iters):
@@ -498,6 +498,30 @@ def train():
 
         if i % (decay_iteration * 1000) == 0:
             torch.cuda.empty_cache()
+
+        # ── Difix Pipeline Lazy Init ───────────────────────────────────────────
+        # First time we reach difix_start_step: load the pipeline and run the
+        # initial novel-view synthesis + difix enhancement pass.
+        if args.use_difix and difix_pipe is None and i >= difix_start_step:
+            print(f'[Iter {i}] Initializing Difix pipeline...')
+            sys.path.append(os.path.join(os.path.dirname(__file__), "Difix3D"))
+            from src.pipeline_difix import DifixPipeline
+            difix_pipe = DifixPipeline.from_pretrained("nvidia/difix_ref", trust_remote_code=True)
+            difix_pipe.to(device)
+
+            if args.difix_ver2:
+                difix_updater.update(i, difix_pipe, images_orig,
+                                     Cam_param, args.difix_gt_ref, args.difix_gt_ref_ratio)
+                images_syn = difix_updater.synthetic_imgs.to(images.device)
+                poses_syn  = difix_updater.synthetic_poses.to(poses.device)
+                images = torch.cat([images_orig, images_syn], 0)
+                poses  = torch.cat([poses_orig,  poses_syn],  0)
+                if args.difix_use_depth:
+                    depths_syn = difix_updater.synthetic_depths.to(depths.device)
+                    depths = torch.cat([depths_orig, depths_syn], 0)
+            else:
+                difix_updater.refresh(i, difix_pipe, images, Cam_param)
+            next_refresh = i + args.difix_interval
 
         # ── Frame & Ray Sampling ───────────────────────────────────────────────
         img_i = np.random.choice(i_train)
