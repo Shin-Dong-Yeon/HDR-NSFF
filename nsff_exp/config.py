@@ -24,8 +24,7 @@ def config_parser():
     parser.add_argument("--sf_multires", type=int, default=0,
                         help='log2 of max freq for positional encoding (3D location)')
     parser.add_argument("--debug", action='store_true', help='debugging mode')
-    parser.add_argument("--aligned_depth", action='store_true', help='use aligned_depth instead midas')
-    parser.add_argument("--disp_model", type=str, default='midas', help='options: midas / aligned / depthcrafter / depth-anything')
+    parser.add_argument("--disp_model", type=str, default='midas', help='options: midas / depthcrafter / depth-anything')
     parser.add_argument("--sparse", action='store_true', help='sparse input or else')
     parser.add_argument("--half_res", action='store_true', default=True, help='option for blender dataset')
 
@@ -37,7 +36,6 @@ def config_parser():
     parser.add_argument("--share_wb", action='store_true', default=False, help='share just 3 wb')
     parser.add_argument("--log_scale", action='store_true', default=False, help='use log scale crf')
     parser.add_argument("--ref_idx", type=int, default=0, help='reference index for crf')
-    parser.add_argument("--disp_loss", type=str, default=None, help='options: depth-anything-o1 / depth-anything-o2')
     parser.add_argument("--custom_times", type=int, default=None, help='render at just custom times')
     parser.add_argument("--leaky_th_h", type=float, default=0.9, help='leaky threshold high')
     parser.add_argument("--leaky_th_l", type=float, default=0.15, help='leaky threshold high')
@@ -53,6 +51,8 @@ def config_parser():
     parser.add_argument("--render_lockcam", action='store_true', default=False)
     parser.add_argument("--render_lockcam_slowmo_full", action='store_true', default=False)
     parser.add_argument("--stage", type=int, default=1)
+
+    # difix options
     parser.add_argument("--use_difix", action='store_true', default=False)
     parser.add_argument("--difix_interval", type=int, default=20000)
     parser.add_argument("--difix_num_views", type=int, default=2,

@@ -47,7 +47,6 @@ use_tone_mapping_camparam=True
 i_weights=10000
 N_iters=250001
 disp_model=depth-anything
-disp_loss=depth-anything-o1
 
 traj_flow=True
 

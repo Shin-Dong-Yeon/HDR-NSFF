@@ -812,18 +812,8 @@ def train():
                         if args.decay_crf_w else args.w_crf_smooth)
 
         # ── Depth Loss ─────────────────────────────────────────────────────────
-        if args.aligned_depth:
-            depth_loss = w_depth * compute_aligned_depth_loss(
-                ret['depth_map_ref_dy'], target_depth)
-        elif args.disp_loss == 'depth-anything-o1':
-            depth_loss = w_depth * compute_depth_loss(
-                ret['depth_map_ref_dy'], -1. / (target_depth + 1e-5))
-        elif args.disp_loss == 'depth-anything-o2':
-            depth_loss = w_depth * compute_depth_loss_o2(
-                ret['depth_map_ref_dy'], target_depth)
-        else:
-            depth_loss = w_depth * compute_depth_loss(
-                ret['depth_map_ref_dy'], -target_depth)
+        depth_loss = w_depth * compute_depth_loss(
+            ret['depth_map_ref_dy'], -1. / (target_depth + 1e-5))
 
         # ── Optical Flow Loss ──────────────────────────────────────────────────
         if img_i == 0:
