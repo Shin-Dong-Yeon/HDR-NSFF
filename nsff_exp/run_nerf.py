@@ -446,7 +446,7 @@ def train():
         difix_updater = DifixUpdater(
             H, W, focal, render, render_kwargs_test,
             images, poses,
-            args.difix_kview, args.difix_kview_step,
+            args.difix_num_views, args.difix_view_step,
             difix_save_root, args.datadir,
             use_depth=False, mask_warp=False,
             motion_masks=masks,
@@ -472,7 +472,7 @@ def train():
 
             if os.path.exists(difix_save_root):
                 difix_updater.update(difix_log_step, difix_pipe, images_orig,
-                                     Cam_param, True, args.difix_gt_ref_ratio)
+                                     Cam_param, True, args.difix_ref_scale)
                 images_syn = difix_updater.synthetic_imgs.to(images.device)
                 poses_syn  = difix_updater.synthetic_poses.to(poses.device)
                 images = torch.cat([images_orig, images_syn], 0)
@@ -502,7 +502,7 @@ def train():
             difix_pipe.to(device)
 
             difix_updater.update(i, difix_pipe, images_orig,
-                                 Cam_param, True, args.difix_gt_ref_ratio)
+                                 Cam_param, True, args.difix_ref_scale)
             images_syn = difix_updater.synthetic_imgs.to(images.device)
             poses_syn  = difix_updater.synthetic_poses.to(poses.device)
             images = torch.cat([images_orig, images_syn], 0)
@@ -514,11 +514,11 @@ def train():
 
         if args.use_difix and i > difix_start_step:
             use_difix_flag = True
-            is_syn = 0 if (np.random.rand() < args.difix_gt_ratio) else 1
+            is_syn = 0 if (np.random.rand() < args.difix_gt_prob) else 1
 
             if is_syn != 0:
-                which_syn   = np.random.choice(args.difix_kview)
-                img_i_difix = len(i_train) + img_i * args.difix_kview + which_syn
+                which_syn   = np.random.choice(args.difix_num_views)
+                img_i_difix = len(i_train) + img_i * args.difix_num_views + which_syn
                 for p in render_kwargs_train['network_rigid'].parameters():
                     p.requires_grad = False
                 render_kwargs_train['network_rigid'].eval()
@@ -647,7 +647,7 @@ def train():
         if args.use_difix and i >= difix_start_step:
             if global_step >= next_refresh:
                 difix_updater.update(global_step, difix_pipe, images, Cam_param,
-                                     True, args.difix_gt_ref_ratio)
+                                     True, args.difix_ref_scale)
                 next_refresh  += args.difix_interval
                 images_syn = difix_updater.synthetic_imgs.to(images.device)
                 poses_syn  = difix_updater.synthetic_poses.to(poses.device)

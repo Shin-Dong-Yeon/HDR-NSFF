@@ -57,20 +57,13 @@ use_render_l1=True
 
 use_difix=True
 difix_interval=20_000
-difix_kview=2
-difix_kview_step=1
-difix_ver2=True
+difix_num_views=2
+difix_view_step=1
 difix_start_step=190_100
-difix_freeze_rigid=True
-balanced_sampling=True
-difix_gt_ratio=0.9
-difix_use_depth=False
-difix_gt_ref=True
-difix_gt_ref_ratio=0.8
+difix_gt_prob=0.9
+difix_ref_scale=0.8
 
 use_percept=True
 
 crf_stop_step=190_100
-difix_weights_map_ray=True
-difix_use_mv_mask=True
 w_percept=0.001

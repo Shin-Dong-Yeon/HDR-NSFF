@@ -55,13 +55,17 @@ def config_parser():
     parser.add_argument("--stage", type=int, default=1)
     parser.add_argument("--use_difix", action='store_true', default=False)
     parser.add_argument("--difix_interval", type=int, default=20000)
-    parser.add_argument("--difix_kview", type=int, default=2)
-    parser.add_argument("--difix_kview_step", type=int, default=1)
+    parser.add_argument("--difix_num_views", type=int, default=2,
+                        help='number of novel views synthesized per training frame')
+    parser.add_argument("--difix_view_step", type=int, default=1,
+                        help='camera index offset from training frame for novel view poses')
     parser.add_argument("--difix_start_step", type=int, default=200000)
     parser.add_argument("--use_render_l1", action='store_true', default=False)
-    parser.add_argument("--difix_gt_ratio", type=float, default=0.9, help='probability of GT ratio, [0.,1.]')
+    parser.add_argument("--difix_gt_prob", type=float, default=0.9,
+                        help='probability of sampling a real GT view per iteration (vs difix-enhanced)')
     parser.add_argument("--w_render", type=float, default=1.)
-    parser.add_argument("--difix_gt_ref_ratio", type=float, default=1.)
+    parser.add_argument("--difix_ref_scale", type=float, default=1.,
+                        help='resize scale of reference GT image passed into Difix (reduce for VRAM)')
     parser.add_argument("--eval_start_time", type=int, default=0)
     parser.add_argument("--w_crf_smooth", type=float, default=0.001)
     parser.add_argument("--share_crf_lr_ratio", type=float, default=1.)
