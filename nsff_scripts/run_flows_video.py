@@ -690,7 +690,7 @@ def run_optical_flows(args):
             images = load_image_list(images)
             
         if args.traj_init:
-            trajs = sorted(glob.glob(os.path.join(basedir, 'traj_flow/', '*.npz')))
+            trajs = sorted(glob.glob(os.path.join(basedir, 'semantic_flow/', '*.npz')))
             trajs = [np.load(traj) for traj in trajs]
             trajs = [torch.from_numpy(traj['flow']).permute(2, 0, 1).float().to(DEVICE) for traj in trajs]  
             trajs = torch.stack(trajs, dim=0)
@@ -863,7 +863,7 @@ def run_optical_flows_mask(args):
             images = load_image_list(images)
             
         if args.traj_init:
-            trajs = sorted(glob.glob(os.path.join(basedir, 'traj_flow/', '*.npz')))
+            trajs = sorted(glob.glob(os.path.join(basedir, 'semantic_flow/', '*.npz')))
             trajs = [np.load(traj) for traj in trajs]
             trajs = [torch.from_numpy(traj['flow']).permute(2, 0, 1).float().to(DEVICE) for traj in trajs]  
             trajs = torch.stack(trajs, dim=0)
@@ -1038,7 +1038,7 @@ def run_optical_flows_mask(args):
             np.savez(os.path.join(of_dir, '%05d_fwd.npz'%(i)), flow=fwd_flow, mask=fwd_mask)
             np.savez(os.path.join(of_dir, '%05d_bwd.npz'%(i + 1)), flow=bwd_flow, mask=bwd_mask)
 
-def run_traj_flows(args):
+def run_semantic_flows(args):
 
     basedir = "%s"%args.data_path
     # print(basedir)
@@ -1052,7 +1052,7 @@ def run_traj_flows(args):
 
     # interval = 1
     interval = args.step
-    of_dir = os.path.join(basedir, 'traj_flow_i%d'%interval)
+    of_dir = os.path.join(basedir, 'semantic_flow_i%d'%interval)
     os.makedirs(of_dir, exist_ok=True)
 
     if interval != 1:
@@ -1149,7 +1149,7 @@ def run_traj_flows(args):
             bwd_mask = bwd_mask.astype(np.uint8) & motion_mask_i1
             
             if VIZ:
-                viz_flow_dir = basedir + "/viz_traj_flow_i%d"%interval
+                viz_flow_dir = basedir + "/viz_semantic_flow_i%d"%interval
                 if not os.path.exists(viz_flow_dir):
                     os.makedirs(viz_flow_dir)
 
@@ -1160,7 +1160,7 @@ def run_traj_flows(args):
                 if MASK:
                     viz_warp_mask_dir = os.path.join(basedir, 'viz_warp_mask_traj')
                     os.makedirs(viz_warp_mask_dir, exist_ok=True)
-                    viz_flow_dir_ind = basedir + "/viz_individiaul_traj_flow_i%d"%interval
+                    viz_flow_dir_ind = basedir + "/viz_individiaul_semantic_flow_i%d"%interval
                     os.makedirs(viz_flow_dir_ind, exist_ok=True)    
                     
                 plt.figure(figsize=(12, 6))
@@ -1220,7 +1220,7 @@ def run_traj_flows(args):
             np.savez(os.path.join(of_dir, '%05d_fwd.npz'%(i)), flow=fwd_flow, mask=fwd_mask)
             np.savez(os.path.join(of_dir, '%05d_bwd.npz'%(i + 1)), flow=bwd_flow, mask=bwd_mask)
 
-def run_traj_flows_i(args):
+def run_semantic_flows_i(args):
 
     basedir = "%s"%args.data_path
     # print(basedir)
@@ -1234,7 +1234,7 @@ def run_traj_flows_i(args):
 
     # interval = 1
     interval = args.interval
-    of_dir = os.path.join(basedir, 'traj_flow_i%d'%interval)
+    of_dir = os.path.join(basedir, 'semantic_flow_i%d'%interval)
     os.makedirs(of_dir, exist_ok=True)
 
     dino_tracker_dir = 'dino-tracker'
@@ -1317,7 +1317,7 @@ def run_traj_flows_i(args):
             bwd_mask = bwd_mask.astype(np.uint8) & motion_mask_i1
             
             if VIZ:
-                viz_flow_dir = basedir + "/viz_traj_flow_i%d"%interval
+                viz_flow_dir = basedir + "/viz_semantic_flow_i%d"%interval
                 if not os.path.exists(viz_flow_dir):
                     os.makedirs(viz_flow_dir)
 
@@ -1379,7 +1379,7 @@ def run_traj_flows_i(args):
             np.savez(os.path.join(of_dir, '%05d_fwd.npz'%(i)), flow=fwd_flow, mask=fwd_mask)
             np.savez(os.path.join(of_dir, '%05d_bwd.npz'%(i + interval)), flow=bwd_flow, mask=bwd_mask)
 
-def run_traj_flows_i_all_pixel(args):
+def run_semantic_flows_i_all_pixel(args):
 
     basedir = "%s"%args.data_path
     # print(basedir)
@@ -1393,7 +1393,7 @@ def run_traj_flows_i_all_pixel(args):
 
     # interval = 1
     interval = args.interval
-    of_dir = os.path.join(basedir, 'traj_flow_i%d_all_pixel'%interval)
+    of_dir = os.path.join(basedir, 'semantic_flow_i%d_all_pixel'%interval)
     os.makedirs(of_dir, exist_ok=True)
 
     dino_tracker_dir = 'dino-tracker'
@@ -1498,7 +1498,7 @@ def run_traj_flows_i_all_pixel(args):
             bwd_mask = bwd_mask.astype(np.uint8)# & motion_mask_i1
             
             if VIZ:
-                viz_flow_dir = basedir + "/viz_traj_flow_i%d_all_pixel"%interval
+                viz_flow_dir = basedir + "/viz_semantic_flow_i%d_all_pixel"%interval
                 if not os.path.exists(viz_flow_dir):
                     os.makedirs(viz_flow_dir)
 
@@ -1566,9 +1566,9 @@ if __name__ == '__main__':
     parser.add_argument("--skip_of", action='store_true', default=False)
     parser.add_argument("--traj_init", action='store_true', default=False)
     parser.add_argument("--skip_moseg", action='store_true', default=False)
-    parser.add_argument("--traj_flow", action='store_true', default=False)
-    parser.add_argument("--traj_flow_i", action='store_true', default=False)
-    parser.add_argument("--traj_flow_all_pixel", action='store_true', default=False)
+    parser.add_argument("--semantic_flow", action='store_true', default=False)
+    parser.add_argument("--semantic_flow_i", action='store_true', default=False)
+    parser.add_argument("--semantic_flow_all_pixel", action='store_true', default=False)
     parser.add_argument("--interval", type=int, default=1, help='interval of trajectry flow')
     parser.add_argument("--offset", type=int, default=0, help='off set for trajcetory flow')
     parser.add_argument("--of_mask", action='store_true', default=False)
@@ -1587,11 +1587,11 @@ if __name__ == '__main__':
         
 
     args = parser.parse_args()
-    if args.traj_flow:
-        run_traj_flows(args)
+    if args.semantic_flow:
+        run_semantic_flows(args)
         sys.exit(0)
-    elif args.traj_flow_i:
-        run_traj_flows_i(args)
+    elif args.semantic_flow_i:
+        run_semantic_flows_i(args)
         sys.exit(0)
     if not args.skip_of:
         run_optical_flows(args)
@@ -1599,8 +1599,8 @@ if __name__ == '__main__':
     if args.of_mask:
         run_optical_flows_mask(args)
         sys.exit(0)
-    elif args.traj_flow_all_pixel:
-        run_traj_flows_i_all_pixel(args)
+    elif args.semantic_flow_all_pixel:
+        run_semantic_flows_i_all_pixel(args)
         sys.exit(0)
     if (args.data_type == 'colmap') & (not args.skip_moseg):
         motion_segmentation(args.data_path, args.epi_threshold, args.multi_camera)

@@ -47,7 +47,7 @@ i_weights=50000
 N_iters=250001
 disp_model=depth-anything
 
-traj_flow=True
+semantic_flow=True
 
 final_height=360
 

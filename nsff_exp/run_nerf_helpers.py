@@ -746,9 +746,9 @@ def read_optical_flow(basedir, img_i, start_frame, fwd, step):
 
       return bwd_flow, bwd_mask
   
-def read_traj_flow_(basedir, img_i, fwd):
+def read_semantic_flow_(basedir, img_i, fwd):
     import os
-    flow_dir = os.path.join(basedir, 'traj_flow_i1')
+    flow_dir = os.path.join(basedir, 'semantic_flow_i1')
 
     if fwd:
       fwd_flow_path = os.path.join(flow_dir, 
@@ -769,9 +769,9 @@ def read_traj_flow_(basedir, img_i, fwd):
 
       return bwd_flow, segm_mask
     
-def read_traj_flow(basedir, img_i, fwd, start_frame=0, step=1):
+def read_semantic_flow(basedir, img_i, fwd, start_frame=0, step=1):
     import os
-    flow_dir = os.path.join(basedir, f'traj_flow_i{step}')
+    flow_dir = os.path.join(basedir, f'semantic_flow_i{step}')
 
     # start_frame = start_frame // step
 
@@ -794,9 +794,9 @@ def read_traj_flow(basedir, img_i, fwd, start_frame=0, step=1):
 
       return bwd_flow, segm_mask
     
-def read_traj_flow_no_offset(basedir, img_i, fwd, start_frame=0, step=1):
+def read_semantic_flow_no_offset(basedir, img_i, fwd, start_frame=0, step=1):
     import os
-    flow_dir = os.path.join(basedir, f'traj_flow_i{step}')
+    flow_dir = os.path.join(basedir, f'semantic_flow_i{step}')
 
     # start_frame = start_frame // step
 

@@ -29,4 +29,4 @@ python ./inference_flow_01.py --config ./config/train.yaml --data-path $dino_pat
 cd ../../hdr-nsff/nsff_scripts/
 export PYTHONPATH=$OLD_PYTHONPATH
 conda activate nsff
-python run_flows_video.py --traj_flow --data_path $data_path --skip_of --skip_moseg
+python run_flows_video.py --semantic_flow --data_path $data_path --skip_of --skip_moseg

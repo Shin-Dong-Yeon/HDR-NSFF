@@ -29,7 +29,7 @@ def config_parser():
     parser.add_argument("--half_res", action='store_true', default=True, help='option for blender dataset')
 
     parser.add_argument("--render_tm", type=str, default='tm', help='options: tm, wb, no')
-    parser.add_argument("--traj_flow", action='store_true', default=False, help='option for using traj_flow')
+    parser.add_argument("--semantic_flow", action='store_true', default=False, help='use semantic-guided optical flow (from DINO-tracker) instead of standard RAFT flow')
     parser.add_argument("--step_frame", type=int, default=1, help='step frame for loading data')
     parser.add_argument("--render_train", action='store_true', default=False, help='render train data')
     parser.add_argument("--share_crf", action='store_true', default=False, help='share crf')

@@ -540,22 +540,22 @@ def train():
         mask_gt     = masks[img_i].cuda()
 
         # ── Optical Flow Loading ───────────────────────────────────────────────
-        if args.traj_flow:
+        if args.semantic_flow:
             # Trajectory-based flow from DINO-tracker
             if img_i == 0:
-                flow_fwd, fwd_mask = read_traj_flow(args.datadir, img_i, fwd=True,
+                flow_fwd, fwd_mask = read_semantic_flow(args.datadir, img_i, fwd=True,
                                                     start_frame=args.start_frame, step=args.step_frame)
                 flow_bwd = np.zeros_like(flow_fwd)
                 bwd_mask = np.zeros_like(fwd_mask)
             elif img_i == num_img - 1:
-                flow_bwd, bwd_mask = read_traj_flow(args.datadir, img_i, fwd=False,
+                flow_bwd, bwd_mask = read_semantic_flow(args.datadir, img_i, fwd=False,
                                                     start_frame=args.start_frame, step=args.step_frame)
                 flow_fwd = np.zeros_like(flow_bwd)
                 fwd_mask = np.zeros_like(bwd_mask)
             else:
-                flow_fwd, fwd_mask = read_traj_flow(args.datadir, img_i, fwd=True,
+                flow_fwd, fwd_mask = read_semantic_flow(args.datadir, img_i, fwd=True,
                                                     start_frame=args.start_frame, step=args.step_frame)
-                flow_bwd, bwd_mask = read_traj_flow(args.datadir, img_i, fwd=False,
+                flow_bwd, bwd_mask = read_semantic_flow(args.datadir, img_i, fwd=False,
                                                     start_frame=args.start_frame, step=args.step_frame)
         else:
             # Standard RAFT optical flow
@@ -874,7 +874,7 @@ def train():
                 'bidirection_loss': sf_cycle_loss.item(),
                 'sf_reg_loss':      sf_reg_loss.item(),
                 'depth_loss':       depth_loss.item(),
-                ('traj_loss' if args.traj_flow else 'flow_loss'): flow_loss.item(),
+                ('semantic_flow_loss' if args.semantic_flow else 'flow_loss'): flow_loss.item(),
                 'sf_sm_loss':       sf_sm_loss.item(),
                 'prob_reg_loss':    prob_reg_loss.item(),
                 'entropy_loss':     entropy_loss.item(),
