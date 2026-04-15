@@ -182,8 +182,6 @@ def config_parser():
                         help='frequency of weight ckpt saving')
     parser.add_argument("--use_tone_mapping", action='store_true', default=False, 
                         help='use tone mapping module')
-    parser.add_argument("--use_tone_mapping_camparam", action='store_true', default=False,
-                        help='for test in rendering, should be merge use_tone_mapping')
     parser.add_argument("--use_initialize", action='store_true', default=False, 
                         help='use tone mapping module')
     parser.add_argument('--use_sat_mask', action='store_true', default=False)

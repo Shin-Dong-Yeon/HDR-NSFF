@@ -42,7 +42,6 @@ crf_start_step=0
 
 use_sat_mask=True
 ref_idx=0
-use_tone_mapping_camparam=True
 
 i_weights=50000
 N_iters=250001

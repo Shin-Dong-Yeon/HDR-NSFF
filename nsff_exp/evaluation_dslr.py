@@ -161,7 +161,7 @@ def evaluation():
         'far' : far,
     }
     
-    if args.use_tone_mapping_camparam == True:
+    if args.use_tone_mapping == True:
         Cam_param, optim_cam = create_CamParam(args, device, images, test=True)
     else:
         Cam_param = None
