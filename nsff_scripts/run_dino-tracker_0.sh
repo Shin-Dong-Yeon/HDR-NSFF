@@ -1,32 +1,33 @@
-#!/usr/bin/zsh -i
+#!/usr/bin/env zsh
 source ~/anaconda3/etc/profile.d/conda.sh
-export CUDA_VISIBLE_DEVICES=0
+conda activate dino-tracker
 
 # ── Data path ──────────────────────────────────────────────────────────────
 export data_path="/home/shindy/projects/hdr-4d/hdr-nsff/dataset_gpu/gopro/251129/bear_thread/dense"
 
+SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
+DINO_DIR="${SCRIPT_DIR}/dino-tracker"
+
+export CUDA_VISIBLE_DEVICES=0
+
 # ── Set up dino-tracker input directories ──────────────────────────────────
 mkdir -p "$data_path/dino-tracker"
-# Remove stale symlinks if they exist
 rm -f "$data_path/dino-tracker/video"
 rm -f "$data_path/dino-tracker/masks"
-ln -s "$data_path/images"        "$data_path/dino-tracker/video"
-ln -s "$data_path/motion_masks"  "$data_path/dino-tracker/masks"
+ln -s "$data_path/images"       "$data_path/dino-tracker/video"
+ln -s "$data_path/motion_masks" "$data_path/dino-tracker/masks"
 
-# ── Switch to dino-tracker repo ────────────────────────────────────────────
-NSFF_SCRIPTS_DIR="$(pwd)"
-cd ../../dino-tracker-temp/dino-tracker
-conda activate dino-tracker
-
-OLD_PYTHONPATH="$PYTHONPATH"
-export PYTHONPATH="$(pwd):$PYTHONPATH"
-export dino_path="$data_path/dino-tracker"
-
-# ── Copy our custom scripts into dino-tracker ─────────────────────────────
-cp "$NSFF_SCRIPTS_DIR/inference_flow_01.py"  ./inference_flow_01.py
-cp "$NSFF_SCRIPTS_DIR/model_inference_ext.py" ./models/model_inference.py
+# ── Sync custom scripts into dino-tracker ─────────────────────────────────
+cp "${SCRIPT_DIR}/inference_flow_01.py"   "${DINO_DIR}/inference_flow_01.py"
+cp "${SCRIPT_DIR}/model_inference_ext.py" "${DINO_DIR}/models/model_inference.py"
 
 # ── Run DINO-tracker pipeline ──────────────────────────────────────────────
+export dino_path="$data_path/dino-tracker"
+export OLD_PYTHONPATH="$PYTHONPATH"
+export PYTHONPATH="${DINO_DIR}:$PYTHONPATH"
+
+cd "${DINO_DIR}"
+
 python ./preprocessing/main_preprocessing.py \
     --config ./config/preprocessing.yaml \
     --data-path "$dino_path"
@@ -41,9 +42,8 @@ python ./inference_flow_01.py \
     --interval 1
 
 # ── Convert trajectory flow → semantic_flow_i{step} npz ───────────────────
-cd "$NSFF_SCRIPTS_DIR"
+cd "${SCRIPT_DIR}"
 export PYTHONPATH="$OLD_PYTHONPATH"
-conda activate nsff
 
 python run_flows_video.py \
     --semantic_flow \
