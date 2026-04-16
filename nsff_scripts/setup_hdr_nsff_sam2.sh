@@ -76,7 +76,8 @@ pip install --quiet \
     "huggingface_hub==0.25.1" \
     "accelerate==1.12.0" \
     "peft==0.9.0" \
-    "packaging<26"
+    "packaging<26" \
+    ipympl
 
 # ---------------------------------------------------------------------------
 # 4. SAM2
