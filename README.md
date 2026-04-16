@@ -1,15 +1,16 @@
-# Nerfies
+# HDR-NSFF
 
-This is the repository that contains source code for the [Nerfies website](https://nerfies.github.io).
+This is the repository that contains source code for the [HDR-NSFF website]([https://nerfies.github.io](https://shin-dong-yeon.github.io/HDR-NSFF/)).
 
 If you find Nerfies useful for your work please cite:
 ```
-@article{park2021nerfies
-  author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
-  title     = {Nerfies: Deformable Neural Radiance Fields},
-  journal   = {ICCV},
-  year      = {2021},
+@inproceedings{dong-yeon2026hdr-nsff,
+      title = {HDR-NSFF: High Dynamic Range Neural Scene Flow Fields},
+      author = {Dong-Yeon, Shin and Jun-Seong, Kim and Byung-Ki, Kwon and Oh, Tae-Hyun},
+      booktitle = {International Conference on Learning Representations (ICLR)},
+      year = {2026}
 }
+
 ```
 
 # Website License
