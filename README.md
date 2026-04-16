@@ -2,7 +2,7 @@
 
 This is the repository that contains source code for the [HDR-NSFF website]([https://nerfies.github.io](https://shin-dong-yeon.github.io/HDR-NSFF/)).
 
-If you find Nerfies useful for your work please cite:
+If you find HDR-NSFF useful for your work please cite:
 ```
 @inproceedings{dong-yeon2026hdr-nsff,
       title = {HDR-NSFF: High Dynamic Range Neural Scene Flow Fields},
