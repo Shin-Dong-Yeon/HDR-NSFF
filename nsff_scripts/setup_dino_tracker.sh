@@ -77,7 +77,9 @@ pip install --quiet \
     tqdm \
     pyyaml \
     "opencv-python==4.8.1.78" \
-    "packaging<26"
+    "packaging<26" \
+    scipy \
+    scikit-image
 
 # Copy custom inference scripts into dino-tracker
 echo "  Copying custom scripts into dino-tracker ..."

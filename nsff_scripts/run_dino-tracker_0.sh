@@ -1,14 +1,15 @@
 #!/usr/bin/env zsh
+set -e
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate dino-tracker
 
 # ── Data path ──────────────────────────────────────────────────────────────
-export data_path="/home/shindy/projects/hdr-4d/hdr-nsff/dataset_gpu/gopro/251129/bear_thread/dense"
+export data_path="/home/shindy/projects/hdr-4d/hdr-nsff/data/hdr-gopro/bear_thread_test/dense"
 
 SCRIPT_DIR="$(cd "$(dirname "${(%):-%x}")" && pwd)"
 DINO_DIR="${SCRIPT_DIR}/dino-tracker"
 
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=2
 
 # ── Set up dino-tracker input directories ──────────────────────────────────
 mkdir -p "$data_path/dino-tracker"
@@ -28,13 +29,13 @@ export PYTHONPATH="${DINO_DIR}:$PYTHONPATH"
 
 cd "${DINO_DIR}"
 
-python ./preprocessing/main_preprocessing.py \
-    --config ./config/preprocessing.yaml \
-    --data-path "$dino_path"
+# python ./preprocessing/main_preprocessing.py \
+#     --config ./config/preprocessing.yaml \
+#     --data-path "$dino_path"
 
-python ./train.py \
-    --config ./config/train.yaml \
-    --data-path "$dino_path"
+# python ./train.py \
+#     --config ./config/train.yaml \
+#     --data-path "$dino_path"
 
 python ./inference_flow_01.py \
     --config ./config/train.yaml \
