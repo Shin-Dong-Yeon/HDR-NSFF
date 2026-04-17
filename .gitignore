@@ -49,3 +49,6 @@ data/*
 # dino-tracker: upstream sample dataset and runtime artifacts
 nsff_scripts/dino-tracker/dataset/
 nsff_scripts/dino-tracker/assets/
+
+.claude/
+CLAUDE.md
