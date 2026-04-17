@@ -74,7 +74,7 @@ class DifixUpdater:
     def __init__(self, H, W, focal, render_fn, render_kwargs_test,
                  base_images, base_poses, k, step, save_root, data_dir, use_depth=False,
                  mask_warp=False, motion_masks=None, weights_map_ray=False, use_mv_mask=False,
-                 inter_pose=False):
+                 inter_pose=False, sam2_predictor=None):
         self.H, self.W, self.focal = H, W, focal
         self.render = render_fn
         self.kw_test = render_kwargs_test
@@ -99,6 +99,9 @@ class DifixUpdater:
         self.weights_map_ray = weights_map_ray
         self.motion_coords = None
         self.use_mv_mask = use_mv_mask
+
+        # SAM2 automatic masking
+        self.sam2_predictor = sam2_predictor
 
         # Synthetic pose option
         self.inter_pose = inter_pose
@@ -126,6 +129,146 @@ class DifixUpdater:
             coords = np.stack((ys, xs), axis=-1).astype(np.int64)
 
         return mask_resized, coords
+
+    def _check_renders_done(self, step: int) -> bool:
+        """Return True if all novel view images are already rendered for this step."""
+        N = self.base_imgs.shape[0]
+        for t in range(N):
+            for n in neighbor_indices(t, N, self.k, self.step):
+                img_path = os.path.join(
+                    self.save_root, f'step_{step:06d}', f't_{t:03d}', f'n_{n:03d}.png')
+                if not os.path.exists(img_path):
+                    return False
+        return True
+
+    def _check_sam2_masking_done(self, step: int) -> bool:
+        """Return True if all rendered novel views already have SAM2 coords on disk."""
+        N = self.base_imgs.shape[0]
+        for t in range(N):
+            for n in neighbor_indices(t, N, self.k, self.step):
+                outdir = os.path.join(self.save_root, f'step_{step:06d}', f't_{t:03d}')
+                img_path    = os.path.join(outdir, f'n_{n:03d}.png')
+                coords_path = os.path.join(outdir, f'n_{n:03d}_weights_coords.npy')
+                if os.path.exists(img_path) and not os.path.exists(coords_path):
+                    return False
+        return True
+
+    def _run_sam2_masking(self, step: int) -> None:
+        """Run SAM2 on all rendered novel views to generate dynamic masks automatically.
+
+        Images are grouped by neighbor index n (view-major order), giving temporal
+        continuity within each group for reliable SAM2 propagation.
+
+        Prompt strategy: bounding box extracted from base_motion_masks[n_view].
+          - Novel view (t, n) is rendered from CAMERA n's pose.
+          - motion_masks[n] is the real training frame captured from the same camera n.
+          - Therefore motion_masks[n] gives the most accurate 2D bounding box of the
+            dynamic object as seen from that camera — regardless of which time t is
+            being rendered.
+          - Using motion_masks[t_start] (different camera) would give a box in the
+            wrong image region, causing SAM2 to lock onto background.
+
+        Saves results to:
+          {save_root}/step_{step:06d}/t_{t:03d}/n_{n:03d}_weights_map_mask.png
+          {save_root}/step_{step:06d}/t_{t:03d}/n_{n:03d}_weights_coords.npy
+        """
+        if self.sam2_predictor is None:
+            return
+        if self.base_motion_masks is None:
+            print('[SAM2] No motion_masks available — skipping SAM2 masking.')
+            return
+
+        import tempfile, shutil
+        from PIL import Image as PILImage
+
+        N = self.base_imgs.shape[0]
+
+        # Collect (t, paths) grouped by view index n — skip already-masked pairs
+        groups: dict = {}  # n -> [(t, img_path, mask_path, coords_path), ...]
+        for t in range(N):
+            for n in neighbor_indices(t, N, self.k, self.step):
+                outdir      = os.path.join(self.save_root, f'step_{step:06d}', f't_{t:03d}')
+                img_path    = os.path.join(outdir, f'n_{n:03d}.png')
+                mask_path   = os.path.join(outdir, f'n_{n:03d}_weights_map_mask.png')
+                coords_path = os.path.join(outdir, f'n_{n:03d}_weights_coords.npy')
+                if not os.path.exists(img_path):
+                    continue  # not rendered yet
+                if os.path.exists(coords_path):
+                    continue  # already processed
+                groups.setdefault(n, []).append((t, img_path, mask_path, coords_path))
+
+        if not groups:
+            print('[SAM2] All masks already present — skipping.')
+            return
+
+        n_total = sum(len(v) for v in groups.values())
+        print(f'[SAM2] Masking {n_total} novel views across {len(groups)} view group(s)...')
+
+        kernel = np.ones((3, 3), np.uint8)
+
+        with torch.inference_mode(), torch.autocast('cuda', dtype=torch.bfloat16):
+            for n_view, pairs in sorted(groups.items()):
+                pairs_sorted = sorted(pairs, key=lambda x: x[0])  # sort by t
+
+                # Bounding box from motion_masks[n_view]:
+                #   Novel view uses camera n's pose → motion_masks[n] is the real frame
+                #   from that same camera, giving the correct 2D object region.
+                mm = self.base_motion_masks[n_view]  # [H, W]
+                mm_np = (mm.detach().cpu().float().numpy()
+                         if torch.is_tensor(mm) else np.asarray(mm, dtype=float))
+                ys, xs = np.where(mm_np > 0.5)
+                if ys.size == 0:
+                    print(f'[SAM2]   n={n_view}: empty motion_mask[{n_view}] — skip.')
+                    continue
+
+                # Bounding box [x_min, y_min, x_max, y_max] with 10% margin
+                H_img, W_img = mm_np.shape
+                margin_y = max(1, int((ys.max() - ys.min()) * 0.10))
+                margin_x = max(1, int((xs.max() - xs.min()) * 0.10))
+                box = np.array([
+                    max(0,     xs.min() - margin_x),
+                    max(0,     ys.min() - margin_y),
+                    min(W_img, xs.max() + margin_x),
+                    min(H_img, ys.max() + margin_y),
+                ], dtype=np.float32)
+
+                # Build temp JPEG dir (SAM2 load_video_frames requires JPEG)
+                tmp_dir = tempfile.mkdtemp(prefix='sam2_difix_')
+                try:
+                    for frame_idx, (_, img_path, _, _) in enumerate(pairs_sorted):
+                        PILImage.open(img_path).convert('RGB').save(
+                            os.path.join(tmp_dir, f'{frame_idx:05d}.jpg'), quality=95)
+
+                    inf_state = self.sam2_predictor.init_state(video_path=tmp_dir)
+                    self.sam2_predictor.reset_state(inf_state)
+                    self.sam2_predictor.add_new_points_or_box(
+                        inference_state=inf_state,
+                        frame_idx=0,
+                        obj_id=1,
+                        box=box,
+                    )
+
+                    frame_masks: dict = {}
+                    for out_idx, _, out_logits in self.sam2_predictor.propagate_in_video(inf_state):
+                        frame_masks[out_idx] = (out_logits[0, 0] > 0).cpu().numpy().astype(np.uint8) * 255
+
+                    for frame_idx, (_, _, mask_path, coords_path) in enumerate(pairs_sorted):
+                        raw = frame_masks.get(frame_idx)
+                        if raw is None:
+                            continue
+                        mask = cv2.dilate(raw, kernel, iterations=2)
+                        cv2.imwrite(mask_path, mask)
+                        ys2, xs2 = np.where(mask > 0)
+                        coords = (np.stack((ys2, xs2), axis=-1).astype(np.int64)
+                                  if ys2.size > 0 else np.empty((0, 2), np.int64))
+                        np.save(coords_path, coords)
+
+                    print(f'[SAM2]   n={n_view}: box={box.astype(int).tolist()}, '
+                          f'{len(pairs_sorted)} frames done.')
+                finally:
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+
+        print('[SAM2] Masking complete.')
 
     @torch.no_grad()
     def update(self, step, pipe, ref_imgs, cam_param, gt=True, gt_ratio=1.):
@@ -287,11 +430,16 @@ class DifixUpdater:
                             mask_png = weights_map_to_mask(
                                 ret['weights_map_dd'], mode='threshold', q=0.80, thr=0.99)
                             cv2.imwrite(mask_path, mask_png)
-                            ys, xs = np.where(mask_png > 0)
-                            coords = (np.stack((ys, xs), axis=-1).astype(np.int64)
-                                      if ys.size > 0 else np.empty((0, 2), np.int64))
-                            self.motion_coords[t].append(coords)
-                            np.save(coords_path, coords)
+                            if self.sam2_predictor is None:
+                                # No SAM2: use (noisy) weights_map coords directly
+                                ys, xs = np.where(mask_png > 0)
+                                coords = (np.stack((ys, xs), axis=-1).astype(np.int64)
+                                          if ys.size > 0 else np.empty((0, 2), np.int64))
+                                self.motion_coords[t].append(coords)
+                                np.save(coords_path, coords)
+                            else:
+                                # SAM2 will write coords_path; use empty for this pass
+                                self.motion_coords[t].append(np.empty((0, 2), np.int64))
                             wrote_coords = True
 
                         if not wrote_coords and os.path.exists(coords_path) \

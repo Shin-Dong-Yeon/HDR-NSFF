@@ -1,6 +1,6 @@
 expname = bear_thread_difix_debug
 
-basedir = ../logs/hdr-gopro/
+basedir = ./logs/hdr-gopro/
 datadir = ../data/hdr-gopro/bear_thread/dense
 
 dataset_type = llff

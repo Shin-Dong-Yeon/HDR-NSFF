@@ -54,6 +54,11 @@ def config_parser():
 
     # difix options
     parser.add_argument("--use_difix", action='store_true', default=False)
+    parser.add_argument("--sam2_repo", type=str, default="../nsff_scripts/sam2_repo",
+                        help="Path to SAM2 repo. Defaults to ../nsff_scripts/sam2_repo relative to nsff_exp/")
+    parser.add_argument("--sam2_checkpoint", type=str, default="../nsff_scripts/sam2_repo/checkpoints/sam2.1_hiera_large.pt",
+                        help="Path to SAM2 checkpoint .pt file. Defaults to sam2_repo/checkpoints/sam2.1_hiera_large.pt")
+    parser.add_argument("--sam2_model_cfg", type=str, default="configs/sam2.1/sam2.1_hiera_l.yaml")
     parser.add_argument("--difix_interval", type=int, default=20000)
     parser.add_argument("--difix_num_views", type=int, default=2,
                         help='number of novel views synthesized per training frame')

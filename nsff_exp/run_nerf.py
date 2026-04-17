@@ -443,6 +443,29 @@ def train():
         difix_save_root  = os.path.join(basedir, expname, 'difix_views')
         difix_pipe       = None  # loaded lazily at difix_start_step
 
+        # ── SAM2 predictor for automatic novel-view masking ──────────────────
+        # Loaded now (before training loop) so it is available when difix starts.
+        # Falls back gracefully (sam2_predictor=None) if paths are missing.
+        _nsff_exp_dir = os.path.dirname(os.path.abspath(__file__))
+        _sam2_repo = (args.sam2_repo if args.sam2_repo
+                      else os.path.join(_nsff_exp_dir, '..', 'nsff_scripts', 'sam2_repo'))
+        _sam2_repo = os.path.normpath(_sam2_repo)
+        _sam2_ckpt = (args.sam2_checkpoint if args.sam2_checkpoint
+                      else os.path.join(_sam2_repo, 'checkpoints', 'sam2.1_hiera_large.pt'))
+        sam2_predictor = None
+        if os.path.isdir(_sam2_repo) and os.path.isfile(_sam2_ckpt):
+            try:
+                if _sam2_repo not in sys.path:
+                    sys.path.insert(0, _sam2_repo)
+                from sam2.build_sam import build_sam2_video_predictor
+                sam2_predictor = build_sam2_video_predictor(
+                    args.sam2_model_cfg, _sam2_ckpt, device=device)
+                print(f'[Difix] SAM2 predictor loaded from {_sam2_ckpt}')
+            except Exception as _e:
+                print(f'[Difix] SAM2 load failed ({_e}); falling back to weights_map masks.')
+        else:
+            print(f'[Difix] SAM2 repo/checkpoint not found; falling back to weights_map masks.')
+
         difix_updater = DifixUpdater(
             H, W, focal, render, render_kwargs_test,
             images, poses,
@@ -451,8 +474,9 @@ def train():
             use_depth=False, mask_warp=False,
             motion_masks=masks,
             weights_map_ray=True,
-            use_mv_mask=True,
+            use_mv_mask=(sam2_predictor is None),  # mv_mask only when no SAM2
             inter_pose=False,
+            sam2_predictor=sam2_predictor,
         )
 
         images_orig = images
@@ -471,6 +495,11 @@ def train():
             next_refresh   = difix_log_step + args.difix_interval
 
             if os.path.exists(difix_save_root):
+                if not difix_updater._check_renders_done(difix_log_step):
+                    difix_updater.update(difix_log_step, difix_pipe, images_orig,
+                                         Cam_param, True, args.difix_ref_scale)
+                if not difix_updater._check_sam2_masking_done(difix_log_step):
+                    difix_updater._run_sam2_masking(difix_log_step)
                 difix_updater.update(difix_log_step, difix_pipe, images_orig,
                                      Cam_param, True, args.difix_ref_scale)
                 images_syn = difix_updater.synthetic_imgs.to(images.device)
@@ -501,6 +530,13 @@ def train():
             difix_pipe = DifixPipeline.from_pretrained("nvidia/difix_ref", trust_remote_code=True)
             difix_pipe.to(device)
 
+            # Pass 1: render all novel views (skipped if already cached)
+            if not difix_updater._check_renders_done(i):
+                difix_updater.update(i, difix_pipe, images_orig,
+                                     Cam_param, True, args.difix_ref_scale)
+            # SAM2: generate masks (skipped if already done)
+            difix_updater._run_sam2_masking(i)
+            # Pass 2: fast cache hit, loads SAM2 coords into motion_coords
             difix_updater.update(i, difix_pipe, images_orig,
                                  Cam_param, True, args.difix_ref_scale)
             images_syn = difix_updater.synthetic_imgs.to(images.device)
