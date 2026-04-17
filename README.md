@@ -58,6 +58,24 @@ sudo apt-get install colmap
 
 ---
 
+## Data
+
+Place your dataset under `data/`, or create a symlink to an external storage location:
+
+```bash
+ln -s /path/to/your/data data
+```
+
+Expected structure per scene:
+
+```
+data/
+  <scene_name>/
+    images/       ← raw video frames (.jpg or .png)
+```
+
+---
+
 ## Preprocessing Pipeline
 
 All preprocessing runs on your dataset organized as:
