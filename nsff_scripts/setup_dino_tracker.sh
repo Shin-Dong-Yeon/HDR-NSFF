@@ -55,13 +55,8 @@ pip install --quiet \
 echo "[3/4] Setting up dino-tracker ..."
 DINO_DIR="${SCRIPT_DIR}/dino-tracker"
 
-if [ ! -d "${DINO_DIR}" ]; then
-    echo "  Cloning dino-tracker ..."
-    git clone https://github.com/AssafSinger94/dino-tracker.git "${DINO_DIR}"
-else
-    echo "  dino-tracker already cloned — pulling ..."
-    git -C "${DINO_DIR}" pull --ff-only || true
-fi
+# dino-tracker code is included in the repo (nsff_scripts/dino-tracker/).
+# No git clone needed.
 
 # Install deps (skip strict torch pin from requirements.txt — already installed)
 pip install --quiet \
