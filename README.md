@@ -9,7 +9,6 @@ Official implementation of **HDR-NSFF**, accepted at **ICLR 2026**.
 ## 📢 News
 - **[2026.04]** Code released!
 - **[Coming Soon]** HDR-GoPro dataset release.
-- **[2026.03]** Paper accepted at ICLR 2026.
 
 ---
 
