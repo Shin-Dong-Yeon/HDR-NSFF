@@ -1,13 +1,9 @@
 """
-model_inference_ext.py
+model_inference.py
 
 Extended ModelInference class for DINO-tracker with tensor-based flow computation.
 
-USAGE:
-    Copy this file to dino-tracker-temp/dino-tracker/models/model_inference.py
-    (replaces the original). run_dino-tracker_0.sh does this automatically.
-
-Changes vs. original model_inference.py:
+Changes vs. upstream model_inference.py:
   - Added compute_framewise_flow_tensor()        (foreground-masked, vectorized)
   - Added compute_framewise_flow_tensor_bwd()    (foreground-masked, vectorized)
   - Added compute_framewise_flow_tensor_all_pixels()      (all pixels)

@@ -18,10 +18,6 @@ rm -f "$data_path/dino-tracker/masks"
 ln -s "$data_path/images"       "$data_path/dino-tracker/video"
 ln -s "$data_path/motion_masks" "$data_path/dino-tracker/masks"
 
-# ── Sync custom scripts into dino-tracker ─────────────────────────────────
-cp "${SCRIPT_DIR}/inference_flow_01.py"   "${DINO_DIR}/inference_flow_01.py"
-cp "${SCRIPT_DIR}/model_inference_ext.py" "${DINO_DIR}/models/model_inference.py"
-
 # ── Run DINO-tracker pipeline ──────────────────────────────────────────────
 export dino_path="$data_path/dino-tracker"
 export OLD_PYTHONPATH="$PYTHONPATH"
@@ -37,12 +33,12 @@ cd "${DINO_DIR}"
 #     --config ./config/train.yaml \
 #     --data-path "$dino_path"
 
-python ./inference_flow_01.py \
+python ./inference_semantic_flow.py \
     --config ./config/train.yaml \
     --data-path "$dino_path" \
     --interval 1
 
-# ── Convert trajectory flow → semantic_flow_i{step} npz ───────────────────
+# ── Convert semantic flow npy → semantic_flow_i{step} npz ────────────────
 cd "${SCRIPT_DIR}"
 export PYTHONPATH="$OLD_PYTHONPATH"
 

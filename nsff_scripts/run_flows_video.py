@@ -1073,10 +1073,10 @@ def run_semantic_flows(args):
 
         # import pdb; pdb.set_trace()
             
-        fwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'trajectory_flow/', 'traj_flows_i1_fwd.npy')
+        fwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'semantic_flow/', 'semantic_flows_i1_fwd.npy')
         fwd_trajs = np.load(fwd_trajs_file) # [N-1, H, W, 2]
 
-        bwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'trajectory_flow/', 'traj_flows_i1_bwd.npy')
+        bwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'semantic_flow/', 'semantic_flows_i1_bwd.npy')
         bwd_trajs = np.load(bwd_trajs_file) # [N-1, H, W, 2]
 
         offset = args.offset
@@ -1252,15 +1252,15 @@ def run_semantic_flows_i(args):
 
         # import pdb; pdb.set_trace()
             
-        fwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'trajectory_flow/', f'traj_flows_i{interval}_fwd.npy')
+        fwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'semantic_flow/', f'semantic_flows_i{interval}_fwd.npy')
         fwd_trajs = np.load(fwd_trajs_file) # [N-1, H, W, 2]
 
-        bwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'trajectory_flow/', f'traj_flows_i{interval}_bwd.npy')
+        bwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'semantic_flow/', f'semantic_flows_i{interval}_bwd.npy')
         bwd_trajs = np.load(bwd_trajs_file) # [N-1, H, W, 2]
 
         for i in range(fwd_trajs.shape[0]):
             print(i)
-            
+
             image1 = images[i,None]
             image2 = images[i + interval,None]
 
@@ -1268,7 +1268,7 @@ def run_semantic_flows_i(args):
                 image1 = image1[:,0:3,:,:]
                 image2 = image2[:,0:3,:,:]
             # print(image1.shape)
-                
+
             flow_up_fwd = fwd_trajs[i]
             flow_up_bwd = bwd_trajs[i]
 
@@ -1411,10 +1411,10 @@ def run_semantic_flows_i_all_pixel(args):
 
         # import pdb; pdb.set_trace()
             
-        fwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'trajectory_flow_all_pixel/', f'traj_flows_i{interval}_fwd.npy')
+        fwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'semantic_flow_all_pixel/', f'semantic_flows_i{interval}_fwd.npy')
         fwd_trajs = np.load(fwd_trajs_file) # [N-1, H, W, 2]
 
-        bwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'trajectory_flow_all_pixel/', f'traj_flows_i{interval}_bwd.npy')
+        bwd_trajs_file = os.path.join(basedir, dino_tracker_dir, 'semantic_flow_all_pixel/', f'semantic_flows_i{interval}_bwd.npy')
         bwd_trajs = np.load(bwd_trajs_file) # [N-1, H, W, 2]
 
         for i in range(fwd_trajs.shape[0]):
