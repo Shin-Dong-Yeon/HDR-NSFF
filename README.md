@@ -50,12 +50,6 @@ cd nsff_scripts/alt_cuda_corr/
 python setup.py build_ext --inplace
 ```
 
-Install COLMAP (required for camera pose estimation):
-
-```bash
-sudo apt-get install colmap
-```
-
 ---
 
 ## Data
