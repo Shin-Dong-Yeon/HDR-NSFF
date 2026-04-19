@@ -54,20 +54,20 @@
           <div class="is-size-4" style="font-weight: 800; color: #33852d; margin-bottom: 1rem;">
             ICLR 2026
           </div>
-          <div class="is-size-5 publication-authors">
+          <div class="is-size-5 publication-authors" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5rem;">
             <span class="author-block">
-              <a href="https://shin-dong-yeon.github.io">Shin Dong-Yeon</a><sup>1</sup>,</span>
+              <a href="https://shin-dong-yeon.github.io">Shin Dong-Yeon</a><sup>1</sup></span>
             <span class="author-block">
-              <a href="https://kim-junseong.github.io/">Kim Jun-Seong</a><sup>2</sup>,</span>
+              <a href="https://kim-junseong.github.io/">Kim Jun-Seong</a><sup>2</sup></span>
             <span class="author-block">
-              <a href="https://sites.google.com/view/kwon-byung--ki/">Kwon Byung-Ki</a><sup>2</sup>,
+              <a href="https://sites.google.com/view/kwon-byung--ki/">Kwon Byung-Ki</a><sup>2</sup>
             </span>
             <span class="author-block">
               <a href="https://ami.kaist.ac.kr/members/tae-hyun-oh">Tae-Hyun Oh</a><sup>1</sup>
           </div>
 
-          <div class="is-size-5 publication-authors">
-            <span class="author-block"><sup>1</sup>KAIST,</span>
+          <div class="is-size-5 publication-authors" style="display: flex; justify-content: center; gap: 1.5rem;">
+            <span class="author-block"><sup>1</sup>KAIST</span>
             <span class="author-block"><sup>2</sup>POSTECH</span>
           </div>
 
@@ -143,6 +143,84 @@
 </section>
 
 
+<!-- Task Demo -->
+<section class="section" style="background-color: #f5f5f5;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Alternating-exposure Monocular Video &#8594; HDR Scene</h2>
+        <p class="has-text-centered mb-5" style="color:#555;">
+          Given an <b>alternating-exposure monocular video</b> captured with exposure bracketing,
+          HDR-NSFF reconstructs a dynamic HDR radiance field enabling
+          <b>temporally consistent HDR slow-motion rendering</b>.
+        </p>
+
+        <!-- Bear -->
+        <p class="has-text-weight-semibold mb-2" style="color:#888; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">Bear</p>
+        <div class="columns is-vcentered is-gapless mb-5">
+          <div class="column">
+            <p class="has-text-centered mb-2" style="font-size:0.95rem; font-weight:700; color:#555;">Input</p>
+            <p class="has-text-centered mb-2 is-size-7 has-text-grey">Alternating-exposure video (DSLR Bracketing)</p>
+            <video autoplay loop muted playsinline width="100%" style="border-radius:6px;">
+              <source src="./static/videos/Additional_results/thnx_bear_6_input.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="column is-narrow has-text-centered" style="padding: 0 1rem; font-size:1.8rem; color:#aaa;">&#8594;</div>
+          <div class="column">
+            <p class="has-text-centered mb-2" style="font-size:0.95rem; font-weight:700; color:#2e7d32;">Output</p>
+            <p class="has-text-centered mb-2 is-size-7 has-text-grey">HDR slow-motion rendering</p>
+            <video autoplay loop muted playsinline width="100%" style="border-radius:6px;">
+              <source src="./static/videos/Additional_results/thnx_bear_6_slow_mo_bt.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <!-- Leaf -->
+        <p class="has-text-weight-semibold mb-2" style="color:#888; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">Leaf</p>
+        <div class="columns is-vcentered is-gapless mb-5">
+          <div class="column">
+            <p class="has-text-centered mb-2" style="font-size:0.95rem; font-weight:700; color:#555;">Input</p>
+            <p class="has-text-centered mb-2 is-size-7 has-text-grey">Alternating-exposure video (DSLR Bracketing)</p>
+            <video autoplay loop muted playsinline width="100%" style="border-radius:6px;">
+              <source src="./static/videos/Additional_results/leaf_input.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="column is-narrow has-text-centered" style="padding: 0 1rem; font-size:1.8rem; color:#aaa;">&#8594;</div>
+          <div class="column">
+            <p class="has-text-centered mb-2" style="font-size:0.95rem; font-weight:700; color:#2e7d32;">Output</p>
+            <p class="has-text-centered mb-2 is-size-7 has-text-grey">HDR slow-motion rendering</p>
+            <video autoplay loop muted playsinline width="100%" style="border-radius:6px;">
+              <source src="./static/videos/Additional_results/mok_leaf_slow_mo_bt.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <!-- Robin -->
+        <p class="has-text-weight-semibold mb-2" style="color:#888; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.05em;">Robin</p>
+        <div class="columns is-vcentered is-gapless">
+          <div class="column">
+            <p class="has-text-centered mb-2" style="font-size:0.95rem; font-weight:700; color:#555;">Input</p>
+            <p class="has-text-centered mb-2 is-size-7 has-text-grey">Alternating-exposure video (DSLR Bracketing)</p>
+            <video autoplay loop muted playsinline width="100%" style="border-radius:6px;">
+              <source src="./static/videos/Additional_results/robin_1_input.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="column is-narrow has-text-centered" style="padding: 0 1rem; font-size:1.8rem; color:#aaa;">&#8594;</div>
+          <div class="column">
+            <p class="has-text-centered mb-2" style="font-size:0.95rem; font-weight:700; color:#2e7d32;">Output</p>
+            <p class="has-text-centered mb-2 is-size-7 has-text-grey">HDR slow-motion rendering</p>
+            <video autoplay loop muted playsinline width="100%" style="border-radius:6px;">
+              <source src="./static/videos/Additional_results/robin_1_slow_mo_bt.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
 <section class="section">
   <div class="container is-max-desktop">
     <!-- Abstract. -->
@@ -182,34 +260,39 @@
             global consistency across the entire video.
           </p>
         </div>
-        <table class="table is-bordered is-striped is-hoverable is-fullwidth" style="font-size: 0.95rem;">
+        <table class="table is-bordered is-striped is-hoverable" style="font-size: 0.95rem; table-layout: fixed; width: 100%;">
+          <colgroup>
+            <col style="width: 20%;">
+            <col style="width: 40%; text-align: center;">
+            <col style="width: 40%; text-align: center;">
+          </colgroup>
           <thead>
             <tr>
               <th></th>
-              <th>HDR Video (2D)</th>
-              <th style="background:#fffde7; color:#333;"><b>Ours (4D)</b></th>
+              <th style="text-align: center;">HDR Video (2D)</th>
+              <th style="background:#fffde7; color:#333; text-align: center;"><b>Ours (4D)</b></th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><b>Motion modeling</b></td>
-              <td>Pixel-level</td>
-              <td style="background:#fffde7;"><b>3D scene flow</b></td>
+              <td style="text-align: center;">Pixel-level</td>
+              <td style="background:#fffde7; text-align: center;"><b>3D scene flow</b></td>
             </tr>
             <tr>
               <td><b>Geometry</b></td>
-              <td>None</td>
-              <td style="background:#fffde7;"><b>Explicit depth</b></td>
+              <td style="text-align: center;">None</td>
+              <td style="background:#fffde7; text-align: center;"><b>Explicit depth</b></td>
             </tr>
             <tr>
               <td><b>Temporal scope</b></td>
-              <td>3–7 frames</td>
-              <td style="background:#fffde7;"><b>Entire video</b></td>
+              <td style="text-align: center;">3–7 frames</td>
+              <td style="background:#fffde7; text-align: center;"><b>Entire video</b></td>
             </tr>
             <tr>
               <td><b>Output</b></td>
-              <td>One HDR frame</td>
-              <td style="background:#fffde7;"><b>HDR novel view &amp; time synthesis</b></td>
+              <td style="text-align: center;">One HDR frame</td>
+              <td style="background:#fffde7; text-align: center;"><b>HDR novel view &amp; time synthesis</b></td>
             </tr>
           </tbody>
         </table>
@@ -288,18 +371,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Generative Prior visualization -->
-    <div class="columns is-centered mt-4">
-      <div class="column is-full-width">
-        <img src="./static/images/gp_prior.png" alt="Generative prior pipeline" style="width:100%; border-radius:6px;">
-        <p class="is-size-6 has-text-grey mt-2">
-          <b>Generative prior pipeline.</b> Unseen novel views are first rendered, then refined via the generative prior
-          to restore details in regions with broken correspondences. These enhanced views serve as pseudo-labels
-          for progressive optimization, mitigating saturation and limited-view issues.
-        </p>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -317,6 +388,23 @@
         <p class="is-size-6 has-text-grey mt-2">
           Standard optical flow (RAFT) fails under alternating exposures — even with gamma correction or fine-tuning on synthetic data.
           Our semantic-based approach using <b>DINOv2</b> features achieves accurate motion estimation regardless of exposure variation.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Exposure-Robust Flow -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Generative Prior as a Regularizer</h2>
+        <img src="./static/images/gp_prior.png" alt="Generative prior pipeline" style="width:100%; border-radius:6px;">
+        <p class="is-size-6 has-text-grey mt-2">
+          <b>Generative prior pipeline.</b> Unseen novel views are first rendered, then refined via the generative prior
+          to restore details in regions with broken correspondences. These enhanced views serve as pseudo-labels
+          for progressive optimization, mitigating saturation and limited-view issues.
         </p>
       </div>
     </div>
